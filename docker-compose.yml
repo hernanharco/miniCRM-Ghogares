@@ -33,7 +33,7 @@ services:
       - /data/bayiva/scraperidealista:/data/bayiva/scraperidealista:ro
       - /data/bayiva/output:/data/bayiva/output
     group_add:
-      - "999"  # docker group GID (ajustar si es distinto en el host)
+      - "988"  # docker group GID (verificar con: getent group docker)
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/')"]
