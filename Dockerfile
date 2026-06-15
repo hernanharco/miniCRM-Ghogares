@@ -28,9 +28,14 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Instalar Docker CLI para ejecutar scrapers como contenedores
+# Usamos el repo oficial de Docker (docker-ce-cli + compose plugin)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker.io \
-    docker-compose-v2 \
+    ca-certificates curl \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" > /etc/apt/sources.list.d/docker.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    docker-ce-cli \
+    docker-compose-plugin \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar el código de la aplicación
