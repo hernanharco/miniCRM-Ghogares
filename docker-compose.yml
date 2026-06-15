@@ -19,9 +19,21 @@ services:
     environment:
       - PORT=8002
       - PYTHONUNBUFFERED=1
+      # Rutas de los scrapers en el HOST (para Docker socket)
+      - SCRAPER_FOTOCASA_PATH=/data/bayiva/scraperfotocasa
+      - SCRAPER_IDEALISTA_PATH=/data/bayiva/scraperidealista
+      - SCRAPER_OUTPUT_PATH=/data/bayiva/output
     volumes:
       # Persistir la base de datos SQLite fuera del contenedor
       - ./data:/app/data
+      # Socket Docker para ejecutar scrapers como contenedores
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Acceso a scripts y outputs de scrapers
+      - /data/bayiva/scraperfotocasa:/data/bayiva/scraperfotocasa:ro
+      - /data/bayiva/scraperidealista:/data/bayiva/scraperidealista:ro
+      - /data/bayiva/output:/data/bayiva/output
+    group_add:
+      - "999"  # docker group GID (ajustar si es distinto en el host)
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/')"]

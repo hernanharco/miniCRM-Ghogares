@@ -27,6 +27,12 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
+# Instalar Docker CLI para ejecutar scrapers como contenedores
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    docker.io \
+    docker-compose-v2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copiar el código de la aplicación
 COPY app/ ./app/
 COPY run.sh .

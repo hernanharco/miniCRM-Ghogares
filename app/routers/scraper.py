@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import subprocess
 import tempfile
@@ -51,25 +52,32 @@ class ScraperEjecutarResponse(BaseModel):
 
 
 # ─── Config de scrapers ───────────────────────────────────────────────────
+# En Docker, los scrapers corren como contenedores independientes.
+# Se ejecutan via Docker socket montado en el contenedor del CRM.
+
+# Rutas de los scrapers en el HOST (via env vars o defaults)
+_HOST_SCRAPER_FOTOCASA = os.environ.get("SCRAPER_FOTOCASA_PATH", "/data/bayiva/scraperfotocasa")
+_HOST_SCRAPER_IDEALISTA = os.environ.get("SCRAPER_IDEALISTA_PATH", "/data/bayiva/scraperidealista")
+_HOST_OUTPUT_PATH = os.environ.get("SCRAPER_OUTPUT_PATH", "/data/bayiva/output")
 
 SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
-    "fotocasa-api": {
-        "path": Path(settings.scraper_fotocasa_path),
-        "venv": Path(settings.scraper_fotocasa_path) / ".venv" / "bin" / "python",
-        "comando": ["-m", "src.scraper_api", "buscar"],
-        "output_pattern": "fotocasa_api_{zona}_{timestamp}.json",
-    },
     "fotocasa": {
-        "path": Path(settings.scraper_fotocasa_path),
-        "venv": Path(settings.scraper_fotocasa_path) / ".venv" / "bin" / "python",
-        "comando": ["-m", "src.main", "buscar"],
-        "output_pattern": "fotocasa_{zona}_{timestamp}.json",
+        "compose_path": _HOST_SCRAPER_FOTOCASA,
+        "service": "scraper",
+        "compose_file": "docker-compose.yml",
+        "entrypoint": "scraper-fotocasa",
+        "subcomando": "buscar",
+        "env": {"BAYIVA_DB_PATH": "/data/bayiva.db"},
+        "output_dir": f"{_HOST_OUTPUT_PATH}/fotocasa",
     },
     "idealista-hyper": {
-        "path": Path(settings.scraper_idealista_path),
-        "shell": "/bin/bash",
-        "comando": ["./scrapear.sh", "--fuente", "idealista-hyper"],
-        "output_pattern": "idealista_{zona}_{timestamp}.json",
+        "compose_path": _HOST_SCRAPER_IDEALISTA,
+        "service": "scraper",
+        "compose_file": "docker-compose.yml",
+        "entrypoint": "python",
+        "subcomando": ["-m", "src.main", "buscar", "--fuente", "idealista-hyper"],
+        "env": {},
+        "output_dir": f"{_HOST_OUTPUT_PATH}/idealista",
     },
 }
 
@@ -91,61 +99,60 @@ def ejecutar_scraper(
         )
 
     config = SCRAPER_CONFIG[fuente]
-    scraper_path = config["path"]
 
-    # Verificar que el scraper existe
-    if not scraper_path.exists():
+    # Verificar que existe el docker socket
+    docker_socket = Path("/var/run/docker.sock")
+    if not docker_socket.exists():
         return ScraperEjecutarResponse(
             status="error",
             fuente=fuente,
-            mensaje=f"Scraper no encontrado en: {scraper_path}",
+            mensaje="Docker socket no disponible. El CRM no puede ejecutar scrapers en este entorno.",
         )
 
-    # Determinar el ejecutable (python venv o shell bash)
-    usar_shell = "shell" in config
-    ejecutable = Path(config.get("shell", config.get("venv", "")))
-    if not ejecutable.exists():
-        return ScraperEjecutarResponse(
-            status="error",
-            fuente=fuente,
-            mensaje=f"Ejecutable no encontrado: {ejecutable}",
-        )
-
-    # Generar output path temporal
+    # Generar output path
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     zona_archivo = req.zona.lower().replace(" ", "_")
     output_filename = f"crm_{fuente}_{zona_archivo}_{timestamp}.json"
-    output_path = scraper_path / output_filename
+    output_dir = Path(config["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / output_filename
 
-    # Armar comando
-    # Los scrapers con "shell" se ejecutan con bash, los demas con python
-    if usar_shell:
-        cmd = ["/bin/bash", *config["comando"]]
-    else:
-        cmd = [str(ejecutable), *config["comando"]]
-    cmd += [
-        "--zona", req.zona,
-        "--max-paginas", str(req.max_paginas),
-        "-o", str(output_path),
+    # Armar comando Docker Compose
+    compose_file = f"{config['compose_path']}/{config['compose_file']}"
+    cmd = [
+        "docker", "compose",
+        "-f", compose_file,
+        "run", "--rm",
     ]
+
+    # Pasar variables de entorno específicas del scraper
+    for k, v in config["env"].items():
+        cmd.extend(["-e", f"{k}={v}"])
+
+    # Service + subcomando
+    if isinstance(config["subcomando"], list):
+        cmd += [config["service"]] + config["subcomando"]
+    else:
+        cmd += [config["service"], config["subcomando"]]
+
+    # Argumentos comunes
+    cmd += ["--zona", req.zona, "--max-paginas", str(req.max_paginas)]
+
+    # Output path (dentro del contenedor, /output se mapea al output_dir del host)
+    cmd += ["-o", f"/output/{output_filename}"]
+
     if req.precio_max is not None:
         cmd.extend(["--precio-max", str(int(req.precio_max))])
     if req.precio_min is not None:
         cmd.extend(["--precio-min", str(int(req.precio_min))])
 
-    # No cache (solo disponible en fotocasa Playwright)
-    if fuente == "fotocasa":
-        cmd.append("--no-cache")
-    # fotocasa-api no necesita --no-cache (siempre trae datos frescos)
-
-    logger.info("Ejecutando scraper: %s", " ".join(str(c) for c in cmd))
+    logger.info("Ejecutando scraper via Docker: %s", " ".join(str(c) for c in cmd))
 
     # Ejecutar
     start = datetime.now()
     try:
         result = subprocess.run(
             cmd,
-            cwd=str(scraper_path),
             capture_output=True,
             text=True,
             timeout=600,  # 10 min max
@@ -154,7 +161,7 @@ def ejecutar_scraper(
         return ScraperEjecutarResponse(
             status="error",
             fuente=fuente,
-            mensaje="El scraper tardó más de 5 minutos. Probá con menos páginas.",
+            mensaje="El scraper tardó más de 10 minutos. Probá con menos páginas.",
         )
     except Exception as e:
         return ScraperEjecutarResponse(
@@ -165,25 +172,20 @@ def ejecutar_scraper(
 
     duracion = (datetime.now() - start).total_seconds()
 
-    if result.returncode != 0:
-        error_msg = result.stderr[:500] if result.stderr else "Error desconocido"
-        logger.error("Scraper falló: %s", error_msg)
+    # Docker compose run no devuelve exit code del proceso en algunos casos
+    # Verificamos por la existencia del archivo de salida
+    if not output_path.exists():
+        stderr_preview = result.stderr[:500] if result.stderr else "Sin stderr"
+        stdout_preview = result.stdout[:500] if result.stdout else "Sin stdout"
+        logger.error("Scraper Docker falló. stdout: %s stderr: %s", stdout_preview, stderr_preview)
         return ScraperEjecutarResponse(
             status="error",
             fuente=fuente,
-            mensaje=f"Scraper falló (código {result.returncode}): {error_msg}",
+            mensaje=f"Scraper no generó archivo de salida. Docker exit: {result.returncode}",
             duracion_seg=duracion,
         )
 
     # Leer resultados
-    if not output_path.exists():
-        return ScraperEjecutarResponse(
-            status="error",
-            fuente=fuente,
-            mensaje="El scraper terminó pero no generó archivo de salida",
-            duracion_seg=duracion,
-        )
-
     try:
         with open(output_path) as f:
             data = json.load(f)
