@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}{{ c.nombre or 'Contacto' }} — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <a href="/" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Dashboard</a>
+        <span class="text-gray-300">›</span>
+        <a href="/contactos" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Contactos</a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">{{ c.nombre or 'Contacto #' ~ c.id }}</span>
+    </nav>
+
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-900">{{ c.nombre or 'Contacto #' ~ c.id }}</h2>
+        <div class="flex gap-2">
+            <a href="/matches?contacto_id={{ c.id }}"
+               class="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors">
+                🔗 Ver matches
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna principal -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Datos personales -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Datos personales</h3>
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Nombre</dt>
+                    <dd class="text-sm text-gray-900">{{ c.nombre or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Email</dt>
+                    <dd class="text-sm text-gray-900">{{ c.email or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Teléfono</dt>
+                    <dd class="text-sm text-gray-900">{{ c.telefono or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">ID GHL</dt>
+                    <dd class="text-sm text-gray-900 font-mono text-xs">{{ c.id_ghl or '-' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Preferencias de búsqueda -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Preferencias de búsqueda</h3>
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Zona</dt>
+                    <dd class="text-sm text-gray-900">{{ c.zona or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Precio máximo</dt>
+                    <dd class="text-sm font-semibold text-gray-900">
+                        {% if c.precio_max %}{{ "{:,.0f}".format(c.precio_max) }} €{% else %}-{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Tipo de inmueble</dt>
+                    <dd class="text-sm text-gray-900">{{ c.tipo.value|capitalize if c.tipo else '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Habitaciones</dt>
+                    <dd class="text-sm text-gray-900">{{ c.habitaciones or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Metros mínimos</dt>
+                    <dd class="text-sm text-gray-900">{{ c.metros_min or '-' }} m²</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Intención de compra -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Intención de compra</h3>
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Plazo</dt>
+                    <dd class="text-sm">
+                        {% if c.plazo %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if c.plazo == 'urgente' %}bg-red-100 text-red-800
+                            {% elif c.plazo in ('1-3 meses', '3-6 meses') %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ c.plazo }}
+                        </span>
+                        {% else %}-{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Motivación</dt>
+                    <dd class="text-sm text-gray-900">{{ c.motivacion or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Propiedad de interés</dt>
+                    <dd class="text-sm text-gray-900">
+                        {% if c.propiedad_interes %}
+                        <a href="/propiedades/{{ c.propiedad_interes.id }}"
+                           class="text-brand-600 hover:underline">
+                            {{ c.propiedad_interes.titulo or 'Propiedad #' ~ c.propiedad_interes.id }}
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Notas -->
+        {% if c.notas %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Notas</h3>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ c.notas }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Matches existentes -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Matches</h3>
+                <button hx-post="/api/contactos/{{ c.id }}/matchear"
+                        hx-target="#matches-list"
+                        hx-swap="innerHTML"
+                        class="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors">
+                    🎯 Ejecutar matching
+                </button>
+            </div>
+
+            {% if matches %}
+            <div id="matches-list" class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="text-left text-xs font-medium text-gray-500 uppercase px-3 py-2">Propiedad</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Precio</th>
+                            <th class="text-center text-xs font-medium text-gray-500 uppercase px-3 py-2">Score</th>
+                            <th class="text-center text-xs font-medium text-gray-500 uppercase px-3 py-2">Estado</th>
+                            <th class="text-right text-xs font-medium text-gray-500 uppercase px-3 py-2">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for m in matches %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-3 py-2">
+                                <a href="/propiedades/{{ m.propiedad.id }}" class="text-sm text-brand-600 hover:underline">
+                                    {{ m.propiedad.titulo or 'Propiedad #' ~ m.propiedad.id }}
+                                </a>
+                            </td>
+                            <td class="px-3 py-2 text-sm text-right text-gray-900">
+                                {% if m.propiedad.precio %}{{ "{:,.0f}".format(m.propiedad.precio) }} €{% else %}-{% endif %}
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                                <span class="inline-flex items-center gap-1 text-xs font-medium
+                                    {% if m.score >= 80 %}text-green-700
+                                    {% elif m.score >= 60 %}text-yellow-700
+                                    {% else %}text-gray-500{% endif %}">
+                                    <span class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden inline-block">
+                                        <span class="block h-full rounded-full
+                                            {% if m.score >= 80 %}bg-green-500
+                                            {% elif m.score >= 60 %}bg-yellow-500
+                                            {% else %}bg-gray-400{% endif %}"
+                                              style="width: {{ m.score }}%"></span>
+                                    </span>
+                                    {{ m.score }}%
+                                </span>
+                            </td>
+                            <td class="px-3 py-2 text-center">
+                                {% if m.enviado %}
+                                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Enviado</span>
+                                {% else %}
+                                <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2 text-right">
+                                {% if not m.enviado %}
+                                <button hx-post="/matches/{{ m.id }}/enviar"
+                                        hx-target="closest tr"
+                                        hx-swap="outerHTML"
+                                        class="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 transition-colors">
+                                    📤 Marcar enviado
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div id="matches-list">
+                <p class="text-sm text-gray-500 text-center py-8">
+                    No hay matches aún. Haz clic en "Ejecutar matching" para buscar propiedades compatibles.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Acciones</h3>
+            <div class="space-y-2">
+                <button hx-post="/api/contactos/{{ c.id }}/matchear"
+                        hx-target="#matches-list"
+                        hx-swap="innerHTML"
+                        class="w-full text-center px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors">
+                    🎯 Ejecutar matching
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Metadata</h3>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">ID</dt>
+                    <dd class="text-gray-900 font-mono text-xs">#{{ c.id }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">ID GHL</dt>
+                    <dd class="text-gray-900 font-mono text-xs">{{ c.id_ghl or '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Creado</dt>
+                    <dd class="text-gray-900">{{ c.created_at.strftime('%d/%m/%Y') if c.created_at else '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Actualizado</dt>
+                    <dd class="text-gray-900">{{ c.updated_at.strftime('%d/%m/%Y') if c.updated_at else '-' }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

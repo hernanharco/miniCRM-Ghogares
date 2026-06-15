@@ -1,0 +1,64 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if contactos %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Nombre</th>
+                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Email</th>
+                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Zona</th>
+                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Precio máx.</th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Plazo</th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Motivación</th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Habs</th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Metros mín.</th>
+                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for c in contactos %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <a href="/contactos/{{ c.id }}"
+                           class="text-sm font-medium text-brand-600 hover:underline">
+                            {{ c.nombre or 'Sin nombre' }}
+                        </a>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ c.email or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ c.zona or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-right text-gray-900">
+                        {% if c.precio_max %}{{ "{:,.0f}".format(c.precio_max) }} €{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-center">
+                        {% if c.plazo %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if c.plazo == 'urgente' %}bg-red-100 text-red-800
+                            {% elif c.plazo in ('1-3 meses', '3-6 meses') %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ c.plazo }}
+                        </span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-center text-gray-600">{{ c.motivacion or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-center text-gray-600">{{ c.habitaciones or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-center text-gray-600">{{ c.metros_min or '-' }}</td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="/matches?contacto_id={{ c.id }}"
+                           data-hx-boost="false"
+                           class="text-xs px-2 py-1 bg-brand-50 text-brand-600 rounded hover:bg-brand-100 transition-colors">
+                            🔗 Ver matches
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-16 text-gray-500">
+        <p class="text-4xl mb-3">👥</p>
+        <p class="text-lg font-medium mb-1">No hay contactos</p>
+        <p class="text-sm">Los contactos se sincronizarán desde GHL cuando esté configurado.</p>
+    </div>
+    {% endif %}
+</div>

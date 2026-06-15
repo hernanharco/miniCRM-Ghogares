@@ -1,0 +1,125 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if matches %}
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            {% macro sort_url(campo) %}
+                {% set o = 'asc' if filtros.ordenar_por == campo and filtros.orden == 'desc' else 'desc' %}
+                /matches?ordenar_por={{ campo }}&amp;orden={{ o }}{% if filtros.contacto_id %}&amp;contacto_id={{ filtros.contacto_id }}{% endif %}{% if filtros.buscar %}&amp;buscar={{ filtros.buscar }}{% endif %}{% if filtros.score_min and filtros.score_min != 50 %}&amp;score_min={{ filtros.score_min }}{% endif %}
+            {% endmacro %}
+
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <a href="{{ sort_url('contacto') }}"
+                           hx-get="{{ sort_url('contacto') }}"
+                           hx-target="#tabla-matches"
+                           hx-swap="innerHTML"
+                           class="hover:text-gray-700 cursor-pointer">
+                            Contacto
+                            {% if filtros.ordenar_por == 'contacto' %}<span class="ml-1">{{ '▲' if filtros.orden == 'asc' else '▼' }}</span>{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <a href="{{ sort_url('propiedad') }}"
+                           hx-get="{{ sort_url('propiedad') }}"
+                           hx-target="#tabla-matches"
+                           hx-swap="innerHTML"
+                           class="hover:text-gray-700 cursor-pointer">
+                            Propiedad
+                            {% if filtros.ordenar_por == 'propiedad' %}<span class="ml-1">{{ '▲' if filtros.orden == 'asc' else '▼' }}</span>{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <a href="{{ sort_url('score') }}"
+                           hx-get="{{ sort_url('score') }}"
+                           hx-target="#tabla-matches"
+                           hx-swap="innerHTML"
+                           class="hover:text-gray-700 cursor-pointer">
+                            Score
+                            {% if filtros.ordenar_por == 'score' %}<span class="ml-1">{{ '▲' if filtros.orden == 'asc' else '▼' }}</span>{% endif %}
+                        </a>
+                    </th>
+                    <th class="text-center text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Enviado</th>
+                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">
+                        <a href="{{ sort_url('fecha') }}"
+                           hx-get="{{ sort_url('fecha') }}"
+                           hx-target="#tabla-matches"
+                           hx-swap="innerHTML"
+                           class="hover:text-gray-700 cursor-pointer">
+                            Fecha
+                            {% if filtros.ordenar_por == 'fecha' %}<span class="ml-1">{{ '▲' if filtros.orden == 'asc' else '▼' }}</span>{% endif %}
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for m in matches %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <span class="text-sm font-medium text-gray-900">{{ m.contacto.nombre if m.contacto else 'ID: ' ~ m.contacto_id }}</span>
+                        {% if m.contacto and m.contacto.telefono %}
+                        <span class="text-xs text-gray-400 ml-1">{{ m.contacto.telefono }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="/propiedades/{{ m.propiedad_id }}" class="text-sm text-brand-600 hover:text-brand-800">
+                            {{ m.propiedad.titulo[:50] if m.propiedad else 'ID: ' ~ m.propiedad_id }}
+                        </a>
+                        {% if m.propiedad and m.propiedad.precio > 0 %}
+                        <span class="text-xs text-gray-500 ml-1">{{ "{:,.0f}".format(m.propiedad.precio) }} €</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex items-center justify-center">
+                            <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                <div class="rounded-full h-2
+                                    {% if m.score >= 80 %}bg-green-500
+                                    {% elif m.score >= 50 %}bg-yellow-500
+                                    {% else %}bg-red-500{% endif %}"
+                                     style="width: {{ m.score }}%">
+                                </div>
+                            </div>
+                            <span class="text-sm font-medium
+                                {% if m.score >= 80 %}text-green-700
+                                {% elif m.score >= 50 %}text-yellow-700
+                                {% else %}text-red-700{% endif %}">
+                                {{ m.score }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        {% if m.enviado %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            ✅ Enviado
+                        </span>
+                        {% else %}
+                        <button hx-post="/matches/{{ m.id }}/enviar"
+                                hx-target="closest tr"
+                                hx-swap="outerHTML"
+                                class="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors">
+                            Marcar enviado
+                        </button>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500 text-right">
+                        {{ m.created_at.strftime('%d/%m/%Y') if m.created_at else '-' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Resumen -->
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+        Total: {{ matches|length }} matches
+    </div>
+
+    {% else %}
+    <div class="text-center py-16 text-gray-500">
+        <p class="text-4xl mb-3">🔗</p>
+        <p class="text-lg font-medium mb-1">No hay matches</p>
+        <p class="text-sm">Agregá contactos y propiedades para generar matches automáticos.</p>
+    </div>
+    {% endif %}
+</div>

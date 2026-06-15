@@ -1,0 +1,12 @@
+.venv
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+.mini_crm.db
+mini_crm.db
+tests/
+.pytest_cache
+*.md
+.DS_Store

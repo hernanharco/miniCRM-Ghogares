@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Propiedades — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <!-- Breadcrumb con boton visible -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <a href="/" data-hx-boost="false" class="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 font-medium transition-colors">
+            <span>←</span>
+            <span>Dashboard</span>
+        </a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">Propiedades</span>
+        <span class="text-gray-400 ml-2">({{ propiedades|length }})</span>
+    </nav>
+
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">Propiedades</h2>
+    </div>
+</div>
+
+<!-- Filtros (auto-aplicados) -->
+<div id="filtros-propiedades" class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    {% include "propiedades/_filtros.html" %}
+</div>
+
+<!-- Tabla -->
+<div id="tabla-propiedades">
+    {% include "propiedades/_table.html" %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,35 @@
+<!-- Resultado parcial del scraper (para HTMX) -->
+
+{% if r.status == "ok" %}
+<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+    <div class="flex items-start gap-3">
+        <span class="text-xl mt-0.5">✅</span>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-green-800">Scraper completado</p>
+            <p class="text-sm text-green-700 mt-1">{{ r.mensaje }}</p>
+            <div class="mt-2 flex flex-wrap gap-4 text-xs text-green-600">
+                <span>🏘️ <strong>{{ r.propiedades_encontradas }}</strong> encontradas</span>
+                <span>📥 <strong>{{ r.propiedades_importadas }}</strong> importadas</span>
+                <span>⏱️ {{ "%.1f"|format(r.duracion_seg) }} seg</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif r.status == "error" %}
+<div class="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div class="flex items-start gap-3">
+        <span class="text-xl mt-0.5">❌</span>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-red-800">Error</p>
+            <p class="text-sm text-red-700 mt-1">{{ r.mensaje }}</p>
+            {% if r.duracion_seg > 0 %}
+            <p class="text-xs text-red-500 mt-1">⏱️ {{ "%.1f"|format(r.duracion_seg) }} seg</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+    <p class="text-sm text-gray-600">Esperando ejecución...</p>
+</div>
+{% endif %}

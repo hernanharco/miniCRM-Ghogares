@@ -1,0 +1,99 @@
+<!-- Partial de filtros con contadores (solo el grid, sin wrapper) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
+    <!-- Busqueda de texto -->
+    <div class="lg:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Buscar</label>
+        <input type="text" name="q" value="{{ filtros.q }}"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#tabla-propiedades"
+               hx-get="/propiedades"
+               hx-include="closest #filtros-propiedades"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+               placeholder="Título, dirección o zona...">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Zona</label>
+        <input type="text" name="zona" value="{{ filtros.zona }}"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#tabla-propiedades"
+               hx-get="/propiedades"
+               hx-include="closest #filtros-propiedades"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+               placeholder="Ej: Valencia">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Precio mín.</label>
+        <input type="number" name="precio_min" value="{{ filtros.precio_min }}"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#tabla-propiedades"
+               hx-get="/propiedades"
+               hx-include="closest #filtros-propiedades"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+               placeholder="0">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Precio máx.</label>
+        <input type="number" name="precio_max" value="{{ filtros.precio_max }}"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#tabla-propiedades"
+               hx-get="/propiedades"
+               hx-include="closest #filtros-propiedades"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+               placeholder="500000">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Habitaciones</label>
+        <input type="number" name="habitaciones" value="{{ filtros.habitaciones }}"
+               hx-trigger="keyup changed delay:400ms"
+               hx-target="#tabla-propiedades"
+               hx-get="/propiedades"
+               hx-include="closest #filtros-propiedades"
+               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+               placeholder="Cualquiera">
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
+        <select name="tipo"
+                hx-trigger="change"
+                hx-target="#tabla-propiedades"
+                hx-get="/propiedades"
+                hx-include="closest #filtros-propiedades"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+            <option value="">Todos ({{ total_sin_tipo }})</option>
+            {% for t in tipos %}
+            <option value="{{ t.value }}" {% if filtros.tipo == t.value %}selected{% endif %}>
+                {{ t.value|capitalize }} ({{ tipo_counts.get(t.value, 0) }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Estado</label>
+        <select name="estado"
+                hx-trigger="change"
+                hx-target="#tabla-propiedades"
+                hx-get="/propiedades"
+                hx-include="closest #filtros-propiedades"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+            <option value="">Todos ({{ total_sin_estado }})</option>
+            {% for e in estados %}
+            <option value="{{ e.value }}" {% if filtros.estado == e.value %}selected{% endif %}>
+                {{ e.value|capitalize }} ({{ estado_counts.get(e.value, 0) }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="flex items-end">
+        <a href="/propiedades" data-hx-boost="false"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            ✕ Limpiar filtros
+        </a>
+    </div>
+</div>

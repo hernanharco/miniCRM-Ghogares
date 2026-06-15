@@ -1,0 +1,177 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    {% if propiedades %}
+
+    {% set cur_sort = sort_by|default('updated_at') %}
+    {% set cur_order = sort_order|default('desc') %}
+    {% set cur_params = params|default({}) %}
+
+    <!-- ============================================================ -->
+    <!-- VISTA TABLA (tablet + desktop) -->
+    <!-- ============================================================ -->
+    <div class="hidden sm:block overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    {% set cols = [
+                        ('titulo', 'Título', 'left'),
+                        ('precio', 'Precio', 'right'),
+                        ('tipo', 'Tipo', 'center'),
+                        ('zona', 'Zona', 'left'),
+                        ('habitaciones', 'Habs', 'center'),
+                        ('metros', 'Metros', 'center'),
+                        ('estado', 'Estado', 'center'),
+                        ('fuente', 'Fuente', 'center'),
+                    ] %}
+                    {% for col_key, col_label, col_align in cols %}
+                    <th class="text-{{ col_align }} text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">
+                        {% set new_order = 'asc' if cur_sort == col_key and cur_order == 'desc' else 'desc' %}
+                        <a href="?sort_by={{ col_key }}&amp;sort_order={{ new_order }}{% for k, v in cur_params.items() if k not in ('sort_by', 'sort_order') and v %}&amp;{{ k }}={{ v }}{% endfor %}"
+                           data-hx-boost="false"
+                           class="group inline-flex items-center gap-1 hover:text-gray-900 transition-colors">
+                            {{ col_label }}
+                            {% if cur_sort == col_key %}
+                            <span class="text-brand-600">{{ '▲' if cur_order == 'asc' else '▼' }}</span>
+                            {% else %}
+                            <span class="text-gray-300 group-hover:text-gray-400">↕</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    {% endfor %}
+                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-3">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for p in propiedades %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3">
+                        <a href="/propiedades/{{ p.id }}" class="text-sm font-medium text-brand-600 hover:text-brand-800">
+                            {{ p.titulo[:60] if p.titulo else 'Sin título' }}
+                        </a>
+                        {% if p.url %}
+                        <a href="{{ p.url }}" target="_blank" class="ml-1 text-xs text-gray-400 hover:text-gray-600">↗</a>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
+                        {% if p.precio > 0 %}{{ "{:,.0f}".format(p.precio) }} €{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            {{ p.tipo.value|capitalize if p.tipo else '-' }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{{ p.zona or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-center text-gray-600">{{ p.habitaciones or '-' }}</td>
+                    <td class="px-4 py-3 text-sm text-center text-gray-600">{{ p.metros or '-' }}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if p.estado.value == 'disponible' %}bg-green-100 text-green-800
+                            {% elif p.estado.value == 'reservada' %}bg-yellow-100 text-yellow-800
+                            {% elif p.estado.value == 'vendida' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ p.estado.value|capitalize }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs text-gray-500">{{ p.fuente.value|capitalize if p.fuente else '-' }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <div class="flex items-center justify-end space-x-1">
+                            {% if p.estado.value == 'disponible' %}
+                            <button hx-post="/propiedades/{{ p.id }}/estado?estado=reservada"
+                                    hx-target="#tabla-propiedades"
+                                    class="text-xs px-2 py-1 bg-yellow-50 text-yellow-700 rounded hover:bg-yellow-100 transition-colors"
+                                    title="Reservar">🔒</button>
+                            {% endif %}
+                            {% if p.estado.value == 'reservada' or p.estado.value == 'disponible' %}
+                            <button hx-post="/propiedades/{{ p.id }}/estado?estado=vendida"
+                                    hx-target="#tabla-propiedades"
+                                    class="text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
+                                    title="Vendida">✅</button>
+                            {% endif %}
+                            {% if p.url %}
+                            <a href="{{ p.url }}" target="_blank"
+                               class="text-xs px-2 py-1 bg-gray-50 text-gray-400 rounded hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                               title="Ver en {{ p.fuente.value|capitalize if p.fuente else 'portal' }}">↗</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- VISTA TARJETAS (mobile) -->
+    <!-- ============================================================ -->
+    <div class="sm:hidden divide-y divide-gray-200">
+        {% for p in propiedades %}
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <a href="/propiedades/{{ p.id }}" class="text-sm font-medium text-brand-600 hover:text-brand-800 line-clamp-2">
+                        {{ p.titulo[:80] if p.titulo else 'Sin título' }}
+                    </a>
+                    <p class="text-lg font-bold text-gray-900 mt-1">
+                        {% if p.precio > 0 %}{{ "{:,.0f}".format(p.precio) }} €{% else %}-{% endif %}
+                    </p>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0
+                    {% if p.estado.value == 'disponible' %}bg-green-100 text-green-800
+                    {% elif p.estado.value == 'reservada' %}bg-yellow-100 text-yellow-800
+                    {% elif p.estado.value == 'vendida' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ p.estado.value|capitalize }}
+                </span>
+            </div>
+
+            <div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                {% if p.tipo %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">{{ p.tipo.value|capitalize }}</span>
+                {% endif %}
+                {% if p.zona %}
+                <span class="truncate">📍 {{ p.zona }}</span>
+                {% endif %}
+                {% if p.habitaciones %}
+                <span>🛏️ {{ p.habitaciones }}</span>
+                {% endif %}
+                {% if p.metros %}
+                <span>📐 {{ p.metros }} m²</span>
+                {% endif %}
+                <span class="text-gray-400">{{ p.fuente.value|capitalize if p.fuente else '-' }}</span>
+            </div>
+
+            <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                {% if p.estado.value == 'disponible' %}
+                <button hx-post="/propiedades/{{ p.id }}/estado?estado=reservada"
+                        hx-target="#tabla-propiedades"
+                        class="flex-1 text-center text-xs px-3 py-2 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors">
+                    🔒 Reservar
+                </button>
+                {% endif %}
+                {% if p.estado.value == 'reservada' or p.estado.value == 'disponible' %}
+                <button hx-post="/propiedades/{{ p.id }}/estado?estado=vendida"
+                        hx-target="#tabla-propiedades"
+                        class="flex-1 text-center text-xs px-3 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors">
+                    ✅ Vender
+                </button>
+                {% endif %}
+                {% if p.url %}
+                <a href="{{ p.url }}" target="_blank"
+                   class="text-xs px-3 py-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-gray-100 transition-colors">
+                    ↗
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-16 text-gray-500">
+        <p class="text-4xl mb-3">🏘️</p>
+        <p class="text-lg font-medium mb-1">No hay propiedades</p>
+        <p class="text-sm">Importá datos del scraper o agregá propiedades manualmente.</p>
+    </div>
+    {% endif %}
+</div>

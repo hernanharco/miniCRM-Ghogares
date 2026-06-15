@@ -1,0 +1,43 @@
+<!-- Stats de scrapers (actualizable via HTMX OOB) -->
+<div id="scraper-stats" hx-swap-oob="true" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg">
+                <span class="text-2xl">🏘️</span>
+            </div>
+            <div class="ml-4 flex-1">
+                <p class="text-sm font-medium text-gray-500">Propiedades Fotocasa</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_fotocasa }}</p>
+            </div>
+        </div>
+        {% if ultima_fotocasa %}
+        <p class="text-xs text-gray-400 mt-2">Última ejecución: {{ ultima_fotocasa }}</p>
+        {% endif %}
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center">
+            <div class="p-3 bg-purple-100 rounded-lg">
+                <span class="text-2xl">🏠</span>
+            </div>
+            <div class="ml-4 flex-1">
+                <p class="text-sm font-medium text-gray-500">Propiedades Idealista</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_idealista }}</p>
+            </div>
+        </div>
+        {% if ultima_idealista %}
+        <p class="text-xs text-gray-400 mt-2">Última ejecución: {{ ultima_idealista }}</p>
+        {% endif %}
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 col-span-1 md:col-span-2">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-gray-500">⚡ Hyper Solutions API</span>
+                <span class="text-xs text-gray-400">(DataDome bypass)</span>
+            </div>
+            <div class="text-right">
+                <span class="text-lg font-bold text-brand-600">{{ hyper_requests }}</span>
+                <span class="text-sm text-gray-500"> requests</span>
+            </div>
+        </div>
+    </div>
+</div>

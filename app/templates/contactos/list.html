@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Contactos — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <a href="/" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Dashboard</a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">Contactos</span>
+    </nav>
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">Contactos</h2>
+            <p class="text-gray-500 mt-1">{{ contactos|length }} contactos</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros (auto-aplicados: selects cambian al instante, texto espera 400ms) -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <div class="flex flex-wrap gap-4 items-end" id="filtros-contactos">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Buscar por nombre</label>
+            <input type="text" name="nombre" value="{{ filtros.nombre }}"
+                   hx-get="/contactos"
+                   hx-target="#tabla-contactos"
+                   hx-include="closest #filtros-contactos"
+                   hx-trigger="keyup changed delay:400ms"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500"
+                   placeholder="Nombre del contacto...">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Plazo</label>
+            <select name="plazo"
+                    hx-get="/contactos"
+                    hx-target="#tabla-contactos"
+                    hx-include="closest #filtros-contactos"
+                    hx-trigger="change"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                <option value="">Todos</option>
+                <option value="urgente" {% if filtros.plazo == 'urgente' %}selected{% endif %}>Urgente</option>
+                <option value="1-3 meses" {% if filtros.plazo == '1-3 meses' %}selected{% endif %}>1-3 meses</option>
+                <option value="3-6 meses" {% if filtros.plazo == '3-6 meses' %}selected{% endif %}>3-6 meses</option>
+                <option value="6-12 meses" {% if filtros.plazo == '6-12 meses' %}selected{% endif %}>6-12 meses</option>
+                <option value="sin_prisa" {% if filtros.plazo == 'sin_prisa' %}selected{% endif %}>Sin prisa</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Motivación</label>
+            <select name="motivacion"
+                    hx-get="/contactos"
+                    hx-target="#tabla-contactos"
+                    hx-include="closest #filtros-contactos"
+                    hx-trigger="change"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                <option value="">Todas</option>
+                <option value="primera_vivienda" {% if filtros.motivacion == 'primera_vivienda' %}selected{% endif %}>Primera vivienda</option>
+                <option value="inversion" {% if filtros.motivacion == 'inversion' %}selected{% endif %}>Inversión</option>
+                <option value="ampliacion" {% if filtros.motivacion == 'ampliacion' %}selected{% endif %}>Ampliación</option>
+                <option value="cambio_zona" {% if filtros.motivacion == 'cambio_zona' %}selected{% endif %}>Cambio de zona</option>
+                <option value="reduccion" {% if filtros.motivacion == 'reduccion' %}selected{% endif %}>Reducción</option>
+                <option value="segunda_residencia" {% if filtros.motivacion == 'segunda_residencia' %}selected{% endif %}>Segunda residencia</option>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <a href="/contactos" data-hx-boost="false" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+                ✕ Limpiar filtros
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla -->
+<div id="tabla-contactos">
+    {% include "contactos/_table.html" %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Scrapers — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <a href="/" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Dashboard</a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">Scrapers</span>
+    </nav>
+
+    <h2 class="text-2xl font-bold text-gray-900">🚀 Scrapers</h2>
+    <p class="text-gray-500 mt-1">Ejecutá los scrapers e importá propiedades al CRM</p>
+</div>
+
+<!-- Stats (actualizable via HTMX OOB) -->
+{% include "scraper/_stats.html" %}
+
+<!-- Scrapers -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Fotocasa -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">🏘️ Fotocasa</h3>
+                <p class="text-sm text-gray-500">Extrae propiedades de fotocasa.es</p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✅ API HTTP
+            </span>
+        </div>
+        <div class="p-6">
+            <form hx-post="/api/scraper/ejecutar/fotocasa-api"
+                  hx-target="#resultado-fotocasa"
+                  hx-indicator="#spinner-fc"
+                  data-scraper-form="fc">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Zona</label>
+                        <input type="text" name="zona" id="fc-zona" value="valencia"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio máximo (€)</label>
+                        <input type="text" name="precio_max" id="fc-precio-max"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                               placeholder="Ej: 200000 o vacío = sin límite">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio mínimo (€)</label>
+                        <input type="text" name="precio_min" id="fc-precio-min" value="0"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Páginas</label>
+                        <input type="number" name="max_paginas" id="fc-paginas" value="3" min="1" max="20"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-brand-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-brand-700 transition-colors flex items-center justify-center gap-2">
+                    <span id="spinner-fc" class="htmx-indicator">
+                        <svg class="animate-spin h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Ejecutando...
+                    </span>
+                    <span class="htmx-default">▶ Ejecutar Fotocasa</span>
+                </button>
+            </form>
+
+            <!-- Resultado -->
+            <div id="resultado-fotocasa" class="mt-4"></div>
+        </div>
+    </div>
+
+    <!-- Idealista -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900">🏠 Idealista</h3>
+                <p class="text-sm text-gray-500">Extrae propiedades de idealista.com</p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✅ Hyper Solutions
+            </span>
+        </div>
+        <div class="p-6">
+            <form hx-post="/api/scraper/ejecutar/idealista-hyper"
+                  hx-target="#resultado-idealista"
+                  hx-indicator="#spinner-id"
+                  data-scraper-form="id">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Zona</label>
+                        <input type="text" name="zona" id="id-zona" value="valencia"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio máximo (€)</label>
+                        <input type="text" name="precio_max" id="id-precio-max"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                               placeholder="Ej: 200000 o vacío = sin límite">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio mínimo (€)</label>
+                        <input type="text" name="precio_min" id="id-precio-min" value="0"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Páginas</label>
+                        <input type="number" name="max_paginas" id="id-paginas" value="3" min="1" max="20"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-purple-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors flex items-center justify-center gap-2">
+                    <span id="spinner-id" class="htmx-indicator">
+                        <svg class="animate-spin h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Ejecutando...
+                    </span>
+                    <span class="htmx-default">▶ Ejecutar Idealista</span>
+                </button>
+            </form>
+
+            <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                <strong>ℹ️ Hyper Solutions:</strong> Usa API de bypass de DataDome.
+                No necesita navegador ni IP residencial.
+                Requiere <code class="font-mono">HYPER_API_KEY</code> en el .env.
+            </div>
+
+            <!-- Resultado -->
+            <div id="resultado-idealista" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ─── Guardar formularios de scrapers en localStorage ─────────────────────
+// Los valores se guardan al hacer submit y se restauran al cargar la pagina.
+
+(function() {
+    const PREFIX = 'scraper_';
+
+    function saveForm(form) {
+        const scraper = form.dataset.scraperForm; // 'fc' o 'id'
+        const inputs = form.querySelectorAll('input[name]');
+        const data = {};
+        inputs.forEach(inp => {
+            data[inp.name] = inp.value;
+        });
+        try {
+            localStorage.setItem(PREFIX + scraper, JSON.stringify(data));
+        } catch(e) {
+            // localStorage no disponible, ignorar
+        }
+    }
+
+    function loadForm(form) {
+        const scraper = form.dataset.scraperForm;
+        let saved;
+        try {
+            saved = JSON.parse(localStorage.getItem(PREFIX + scraper));
+        } catch(e) {
+            return;
+        }
+        if (!saved) return;
+
+        const inputs = form.querySelectorAll('input[name]');
+        inputs.forEach(inp => {
+            if (saved[inp.name] !== undefined) {
+                inp.value = saved[inp.name];
+            }
+        });
+    }
+
+    // Guardar al hacer submit (antes del HTMX request)
+    document.querySelectorAll('form[data-scraper-form]').forEach(form => {
+        // Cargar valores guardados
+        loadForm(form);
+
+        // Guardar al enviar
+        form.addEventListener('htmx:configRequest', function() {
+            saveForm(form);
+        });
+    });
+
+    // ─── Cooldown / Rate limit ─────────────────────────────────────
+    // Bloquea el boton por 60s cuando hay error de rate limiting (429).
+
+    function bloquearBotonPor(scraper, segundos) {
+        const key = 'scraper_cooldown_' + scraper;
+        const hasta = Date.now() + segundos * 1000;
+        localStorage.setItem(key, hasta.toString());
+        actualizarCooldown(scraper);
+    }
+
+    function actualizarCooldown(scraper) {
+        const key = 'scraper_cooldown_' + scraper;
+        const form = document.querySelector(`form[data-scraper-form="${scraper}"]`);
+        if (!form) return;
+        const btn = form.querySelector('button[type="submit"]');
+        if (!btn) return;
+
+        const hasta = parseInt(localStorage.getItem(key) || '0');
+        const ahora = Date.now();
+
+        if (hasta > ahora) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            const s = Math.ceil((hasta - ahora) / 1000);
+            btn.innerHTML = `⏳ Espera ${s}s...`;
+        } else {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = btn.dataset.textoOriginal || '▶ Ejecutar';
+        }
+    }
+
+    // Actualizar cooldowns cada 1 segundo
+    setInterval(function() {
+        document.querySelectorAll('form[data-scraper-form]').forEach(form => {
+            actualizarCooldown(form.dataset.scraperForm);
+        });
+    }, 1000);
+
+    // Bloquear 15s al hacer submit (evita doble click)
+    document.addEventListener('htmx:beforeRequest', function(e) {
+        const form = e.target?.closest?.('form[data-scraper-form]');
+        if (!form) return;
+        bloquearBotonPor(form.dataset.scraperForm, 15);
+    });
+
+    // Bloquear 60s cuando el resultado es error (rate limit)
+    document.addEventListener('htmx:afterSwap', function(e) {
+        const resultado = e.target;
+        if (!resultado || !resultado.id) return;
+
+        // Detectar si es resultado de scraper (fc o id)
+        const scraper = resultado.id === 'resultado-fotocasa' ? 'fc' :
+                        resultado.id === 'resultado-idealista' ? 'id' : null;
+        if (!scraper) return;
+
+        // Ver si el resultado contiene "Error" o "rate" o "429"
+        const texto = resultado.textContent.toLowerCase();
+        if (texto.includes('error') || texto.includes('rate limit') || texto.includes('429') || texto.includes('too many')) {
+            bloquearBotonPor(scraper, 60);
+        }
+    });
+
+    // Restaurar al cargar pagina
+    document.querySelectorAll('form[data-scraper-form]').forEach(form => {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.dataset.textoOriginal = btn.innerHTML.trim();
+        actualizarCooldown(form.dataset.scraperForm);
+    });
+})();
+</script>
+
+{% endblock %}

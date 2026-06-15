@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Matches — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <a href="/" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Dashboard</a>
+        <span class="text-gray-300">›</span>
+        {% if contacto %}
+        <a href="/contactos" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Contactos</a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">{{ contacto.nombre }}</span>
+        {% else %}
+        <span class="text-gray-900 font-medium">Matches</span>
+        {% endif %}
+    </nav>
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-900">
+                {% if contacto %}Matches de {{ contacto.nombre }}{% else %}Matches{% endif %}
+            </h2>
+            <p class="text-gray-500 mt-1">{{ matches|length }} coincidencias encontradas</p>
+        </div>
+    </div>
+</div>
+
+<!-- Ficha del contacto (solo cuando se filtra por un contacto específico) -->
+{% if contacto %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Nombre</dt>
+            <dd class="text-sm font-medium text-gray-900">{{ contacto.nombre or '-' }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Email</dt>
+            <dd class="text-sm text-gray-600">{{ contacto.email or '-' }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Teléfono</dt>
+            <dd class="text-sm text-gray-600">{{ contacto.telefono or '-' }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Zona</dt>
+            <dd class="text-sm text-gray-600">{{ contacto.zona or '-' }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Presupuesto máx.</dt>
+            <dd class="text-sm font-semibold text-gray-900">
+                {% if contacto.precio_max %}{{ "{:,.0f}".format(contacto.precio_max) }} €{% else %}-{% endif %}
+            </dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Plazo</dt>
+            <dd class="text-sm">
+                {% if contacto.plazo %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                    {% if contacto.plazo == 'urgente' %}bg-red-100 text-red-800
+                    {% elif contacto.plazo in ('1-3 meses', '3-6 meses') %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-green-100 text-green-800{% endif %}">
+                    {{ contacto.plazo }}
+                </span>
+                {% else %}-{% endif %}
+            </dd>
+        </div>
+        <div>
+            <dt class="text-xs font-medium text-gray-500 uppercase">Motivación</dt>
+            <dd class="text-sm text-gray-600">{{ contacto.motivacion or '-' }}</dd>
+        </div>
+        <div class="flex items-end justify-end">
+            <a href="/contactos" class="text-xs text-brand-600 hover:underline">← Volver a contactos</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filtros -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+    <div class="flex flex-wrap gap-4 items-end" id="filtros-matches">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Contacto</label>
+            <select name="contacto_id"
+                    hx-get="/matches"
+                    hx-target="#tabla-matches"
+                    hx-include="closest #filtros-matches"
+                    hx-trigger="change"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                <option value="">Todos</option>
+                {% for c in contactos %}
+                <option value="{{ c.id }}" {% if filtros.contacto_id|string == c.id|string %}selected{% endif %}>{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Buscar propiedad</label>
+            <input type="text" name="buscar" value="{{ filtros.buscar or '' }}"
+                   hx-get="/matches"
+                   hx-target="#tabla-matches"
+                   hx-include="closest #filtros-matches"
+                   hx-trigger="keyup changed delay:400ms"
+                   class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 w-48"
+                   placeholder="Buscar propiedad...">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Score mínimo</label>
+            <select name="score_min"
+                    hx-get="/matches"
+                    hx-target="#tabla-matches"
+                    hx-include="closest #filtros-matches"
+                    hx-trigger="change"
+                    class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+                <option value="0">Todos</option>
+                <option value="30" {% if filtros.score_min == 30 %}selected{% endif %}>≥ 30%</option>
+                <option value="50" {% if filtros.score_min == 50 %}selected{% endif %}>≥ 50%</option>
+                <option value="70" {% if filtros.score_min == 70 %}selected{% endif %}>≥ 70%</option>
+                <option value="90" {% if filtros.score_min == 90 %}selected{% endif %}>≥ 90%</option>
+            </select>
+        </div>
+        <div class="flex items-end gap-2">
+            <a href="/matches" data-hx-boost="false" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+                ✕ Limpiar filtros
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla -->
+<div id="tabla-matches">
+    {% include "match/_table.html" %}
+</div>
+
+{% endblock %}

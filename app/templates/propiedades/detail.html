@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ prop.titulo[:40] if prop.titulo else 'Propiedad' }} — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+        <a href="/" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Dashboard</a>
+        <span class="text-gray-300">›</span>
+        <a href="/propiedades" data-hx-boost="false" class="hover:text-brand-600 transition-colors">Propiedades</a>
+        <span class="text-gray-300">›</span>
+        <span class="text-gray-900 font-medium">{{ prop.titulo[:30] if prop.titulo else 'Detalle' }}</span>
+    </nav>
+
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-900">{{ prop.titulo or 'Propiedad #' ~ prop.id }}</h2>
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+            {% if prop.estado.value == 'disponible' %}bg-green-100 text-green-800
+            {% elif prop.estado.value == 'reservada' %}bg-yellow-100 text-yellow-800
+            {% elif prop.estado.value == 'vendida' %}bg-red-100 text-red-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ prop.estado.value|capitalize }}
+        </span>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Columna principal -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Info general -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Información General</h3>
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Precio</dt>
+                    <dd class="text-sm font-bold text-gray-900">
+                        {% if prop.precio > 0 %}{{ "{:,.0f}".format(prop.precio) }} €{% else %}-{% endif %}
+                        {% if prop.precio_texto %}<span class="text-gray-400 font-normal"> ({{ prop.precio_texto }})</span>{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Tipo</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.tipo.value|capitalize if prop.tipo else '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Zona</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.zona or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Dirección</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.direccion or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Metros</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.metros or '-' }} m²{% if prop.metros_utiles %} ({{ prop.metros_utiles }} útiles){% endif %}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Habitaciones</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.habitaciones or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Baños</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.banos or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Planta</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.planta or '-' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Ascensor</dt>
+                    <dd class="text-sm text-gray-900">
+                        {% if prop.ascensor is none %}-{% elif prop.ascensor %}Sí{% else %}No{% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Estado inmueble</dt>
+                    <dd class="text-sm text-gray-900">{{ prop.estado_inmueble|capitalize or '-' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Descripción -->
+        {% if prop.descripcion %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Descripción</h3>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ prop.descripcion }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Acciones</h3>
+            <div class="space-y-2">
+                {% if prop.estado.value == 'disponible' %}
+                <button hx-post="/propiedades/{{ prop.id }}/estado?estado=reservada"
+                        hx-target="body"
+                        class="w-full text-center px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors">
+                    🔒 Marcar como Reservada
+                </button>
+                {% endif %}
+                {% if prop.estado.value == 'reservada' or prop.estado.value == 'disponible' %}
+                <button hx-post="/propiedades/{{ prop.id }}/estado?estado=vendida"
+                        hx-target="body"
+                        class="w-full text-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                    ✅ Marcar como Vendida
+                </button>
+                {% endif %}
+                {% if prop.url %}
+                <a href="{{ prop.url }}" target="_blank"
+                   class="block text-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                    ↗ Ver en {{ prop.fuente.value|capitalize if prop.fuente else 'portal' }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Metadata</h3>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Fuente</dt>
+                    <dd class="text-gray-900 font-medium">{{ prop.fuente.value|capitalize if prop.fuente else '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">ID externo</dt>
+                    <dd class="text-gray-900 font-mono text-xs">{{ prop.id_externo or '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Agencia</dt>
+                    <dd class="text-gray-900">{{ prop.agencia or '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Creado</dt>
+                    <dd class="text-gray-900">{{ prop.created_at.strftime('%d/%m/%Y') if prop.created_at else '-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Actualizado</dt>
+                    <dd class="text-gray-900">{{ prop.updated_at.strftime('%d/%m/%Y') if prop.updated_at else '-' }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

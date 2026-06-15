@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — CRM Bayiva{% endblock %}
+{% block content %}
+
+<div class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-900">Dashboard</h2>
+    <p class="text-gray-500 mt-1">Resumen del sistema</p>
+</div>
+
+<!-- Stats cards -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-blue-100 rounded-lg">
+                <span class="text-xl">🏘️</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Total Props</p>
+                <p class="text-xl font-bold text-gray-900">{{ total_propiedades }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-green-100 rounded-lg">
+                <span class="text-xl">✅</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Disponibles</p>
+                <p class="text-xl font-bold text-green-600">{{ disponibles }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-yellow-100 rounded-lg">
+                <span class="text-xl">🔒</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Reservadas</p>
+                <p class="text-xl font-bold text-yellow-600">{{ reservadas }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-purple-100 rounded-lg">
+                <span class="text-xl">👥</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Contactos</p>
+                <p class="text-xl font-bold text-gray-900">{{ total_contactos }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-red-100 rounded-lg">
+                <span class="text-xl">🔴</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Urgentes</p>
+                <p class="text-xl font-bold text-red-600">{{ urgentes }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-amber-100 rounded-lg">
+                <span class="text-xl">🔗</span>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-gray-500">Matches</p>
+                <p class="text-xl font-bold text-gray-900">{{ total_matches }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Atención necesaria -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">🔔 Atención necesaria</h3>
+            <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ urgentes }} urgentes</span>
+        </div>
+        <div class="p-4">
+            {% if atencion %}
+            <div class="space-y-3">
+                {% for c in atencion %}
+                <a href="/matches?contacto_id={{ c.id }}" data-hx-boost="false"
+                   class="flex items-center justify-between p-3 rounded-lg hover:bg-red-50 border border-red-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <span class="text-lg">🔴</span>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ c.nombre or 'Sin nombre' }}</p>
+                            <p class="text-xs text-gray-500">
+                                {{ c.zona or 'Sin zona' }} — {% if c.precio_max %}{{ "{:,.0f}".format(c.precio_max) }} €{% else %}-{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded">Urgente</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-6">No hay contactos urgentes</p>
+            {% endif %}
+        </div>
+        {% if atencion %}
+        <div class="px-5 py-3 border-t border-gray-100">
+            <a href="/contactos?plazo=urgente" data-hx-boost="false"
+               class="text-xs text-brand-600 hover:underline">Ver todos los urgentes →</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Últimos matches -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">📈 Últimos matches</h3>
+            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ matches_pendientes }} pendientes</span>
+        </div>
+        <div class="p-4">
+            {% if ultimos_matches %}
+            <div class="space-y-3">
+                {% for m in ultimos_matches %}
+                <div class="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                    <div class="min-w-0 flex-1">
+                        <a href="/propiedades/{{ m.propiedad_id }}" class="text-sm font-medium text-brand-600 hover:underline truncate block">
+                            {{ m.propiedad.titulo[:40] if m.propiedad else 'Prop #' ~ m.propiedad_id }}
+                        </a>
+                        <p class="text-xs text-gray-500">{{ m.contacto.nombre if m.contacto else 'ID: ' ~ m.contacto_id }}</p>
+                    </div>
+                    <div class="text-right ml-3">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                            {% if m.score >= 80 %}bg-green-100 text-green-800
+                            {% elif m.score >= 50 %}bg-yellow-100 text-yellow-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ m.score }}%
+                        </span>
+                        {% if not m.enviado %}
+                        <p class="text-xs text-amber-600 mt-1">Pendiente</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-6">No hay matches todavía</p>
+            {% endif %}
+        </div>
+        <div class="px-5 py-3 border-t border-gray-100">
+            <a href="/matches" data-hx-boost="false" class="text-xs text-brand-600 hover:underline">Ver todos →</a>
+        </div>
+    </div>
+
+    <!-- Últimas propiedades -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">🏠 Últimas propiedades</h3>
+            <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ disponibles }} disponibles</span>
+        </div>
+        <div class="p-4">
+            {% if ultimas_propiedades %}
+            <div class="space-y-3">
+                {% for p in ultimas_propiedades %}
+                <a href="/propiedades/{{ p.id }}" data-hx-boost="false"
+                   class="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-900 truncate">{{ p.titulo[:40] or 'Prop #' ~ p.id }}</p>
+                        <p class="text-xs text-gray-500">{{ p.zona or 'Sin zona' }}</p>
+                    </div>
+                    <div class="text-right ml-3">
+                        <p class="text-sm font-semibold text-gray-900">
+                            {% if p.precio %}{{ "{:,.0f}".format(p.precio) }} €{% else %}-{% endif %}
+                        </p>
+                        <span class="text-xs text-gray-500">{{ p.tipo.value|capitalize if p.tipo else '-' }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-sm text-gray-500 text-center py-6">No hay propiedades</p>
+            {% endif %}
+        </div>
+        <div class="px-5 py-3 border-t border-gray-100">
+            <a href="/propiedades" data-hx-boost="false" class="text-xs text-brand-600 hover:underline">Ver todas →</a>
+        </div>
+    </div>
+</div>
+
+<!-- Accesos rápidos -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+    <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">⚡ Accesos rápidos</h3>
+    <div class="flex flex-wrap gap-3">
+        <a href="/propiedades"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+            🏘️ Propiedades
+        </a>
+        <a href="/contactos"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-100 transition-colors">
+            👥 Contactos
+        </a>
+        <a href="/matches"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">
+            🔗 Matches
+        </a>
+        <a href="/contactos?plazo=urgente"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
+            🔴 Urgentes
+        </a>
+        <a href="/scraper"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors">
+            🚀 Scrapers
+        </a>
+    </div>
+</div>
+
+{% endblock %}

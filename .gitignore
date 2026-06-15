@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment
+.env
+
+# SQLite databases (local dev)
+*.db
+*.db-shm
+*.db-wal
+test.db
+
+# Testing
+.pytest_cache/
+.pytest_cache
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+data/
+
+# Logs
+*.log
+logs/

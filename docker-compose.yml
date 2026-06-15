@@ -1,0 +1,31 @@
+# =============================================================================
+# docker-compose.yml — CRM Bayiva
+# =============================================================================
+#
+# Uso:
+#   docker compose up -d          # Iniciar en background
+#   docker compose logs -f        # Ver logs
+#   docker compose down           # Detener
+#
+# La BD se persiste en ./data/mini_crm.db
+# =============================================================================
+
+services:
+  minicrm:
+    build: .
+    container_name: minicrm
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persistir la base de datos SQLite fuera del contenedor
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
