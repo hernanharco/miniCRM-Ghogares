@@ -68,7 +68,10 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "entrypoint": "scraper-fotocasa",
         "subcomando": "buscar",
         "env": {"BAYIVA_DB_PATH": "/data/bayiva.db"},
-        "output_dir": f"{_HOST_OUTPUT_PATH}/fotocasa",
+        "output_dir": f"{_HOST_SCRAPER_FOTOCASA}/output",
+        # El docker-compose.yml de fotocasa monta ./output:/output
+        # Por eso el output_dir es {compose_path}/output
+        "container_output": "/output",
     },
     "idealista-hyper": {
         "compose_path": _HOST_SCRAPER_IDEALISTA,
@@ -78,6 +81,9 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "subcomando": ["-m", "src.main", "buscar", "--fuente", "idealista-hyper"],
         "env": {},
         "output_dir": f"{_HOST_OUTPUT_PATH}/idealista",
+        # Idealista usa volumen nombrado, sobreescribimos con bind mount
+        "container_output": "/app/output",
+        "extra_volumes": [f"{_HOST_OUTPUT_PATH}/idealista:/app/output"],
     },
 }
 
@@ -129,6 +135,10 @@ def ejecutar_scraper(
     for k, v in config["env"].items():
         cmd.extend(["-e", f"{k}={v}"])
 
+    # Volúmenes extra (para sobreescribir los del docker-compose si es necesario)
+    for vol in config.get("extra_volumes", []):
+        cmd.extend(["-v", vol])
+
     # Service + subcomando
     if isinstance(config["subcomando"], list):
         cmd += [config["service"]] + config["subcomando"]
@@ -138,8 +148,9 @@ def ejecutar_scraper(
     # Argumentos comunes
     cmd += ["--zona", req.zona, "--max-paginas", str(req.max_paginas)]
 
-    # Output path (dentro del contenedor, /output se mapea al output_dir del host)
-    cmd += ["-o", f"/output/{output_filename}"]
+    # Output path: dentro del contenedor es container_output, en el host es output_dir
+    output_container_path = config.get("container_output", "/output")
+    cmd += ["-o", f"{output_container_path}/{output_filename}"]
 
     if req.precio_max is not None:
         cmd.extend(["--precio-max", str(int(req.precio_max))])
