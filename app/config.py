@@ -1,6 +1,10 @@
 """
 Configuración centralizada del CRM Bayiva.
 Toma valores de .env con defaults sensatos.
+
+En Docker (Coolify), las rutas a scrapers se ignoran porque
+los scrapers corren como contenedores independientes.
+En desarrollo local, apuntan a tareas/ automáticamente.
 """
 
 from pathlib import Path
@@ -13,17 +17,23 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # --- BD del CRM ---
+    # En Docker: postgresql://user:pass@supabase:5432/bayiva
+    # En local: sqlite:///./mini_crm.db
     database_url: str = "sqlite:///./mini_crm.db"
 
-    # --- Directorio base: tareas/ ────────────────────────────────
+    # --- Directorio base (solo para dev local) ───────────────────
     _BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 
-    # --- BD del scraper (solo lectura) ---
+    # --- BD del scraper (solo para importación manual) ───────────
+    # En Docker no se usa (los scrapers escriben directo a Supabase)
+    # En local apunta a tareas/bayiva.db automáticamente
     scraper_db_path: str = str(_BASE_DIR / "bayiva.db")
 
-    # --- Rutas a los scrapers ---
-    scraper_fotocasa_path: str = str(_BASE_DIR / "scraperfotocasa")
-    scraper_idealista_path: str = str(_BASE_DIR / "scraperidealista")
+    # --- Rutas a scrapers (solo dev local) ───────────────────────
+    # En Docker/Coolify los scrapers son contenedores independientes,
+    # estas rutas se dejan vacías y se ignoran
+    scraper_fotocasa_path: str = ""
+    scraper_idealista_path: str = ""
 
     # --- Rutas internas ---
     templates_dir: str = "app/templates"
@@ -31,7 +41,7 @@ class Settings(BaseSettings):
 
     # --- Puerto / Host ---
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8002
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
