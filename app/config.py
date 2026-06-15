@@ -18,8 +18,8 @@ load_dotenv()
 class Settings(BaseSettings):
     # --- BD del CRM ---
     # En Docker: postgresql://user:pass@supabase:5432/bayiva
-    # En local: sqlite:///./mini_crm.db
-    database_url: str = "sqlite:///./mini_crm.db"
+    # En local: sqlite:///./data/mini_crm.db (persistente en ./data/)
+    database_url: str = "sqlite:///./data/mini_crm.db"
 
     # --- Directorio base (solo para dev local) ───────────────────
     _BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
