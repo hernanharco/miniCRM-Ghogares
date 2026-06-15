@@ -28,7 +28,10 @@ services:
       - ./data:/app/data
       # Socket Docker para ejecutar scrapers como contenedores
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # Acceso a scripts y outputs de scrapers
+      # Binario Docker y Compose desde el host (evita instalarlos en la imagen)
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins:ro
+      # Acceso a repositorios y outputs de scrapers
       - /data/bayiva/scraperfotocasa:/data/bayiva/scraperfotocasa:ro
       - /data/bayiva/scraperidealista:/data/bayiva/scraperidealista:ro
       - /data/bayiva/output:/data/bayiva/output
