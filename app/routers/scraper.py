@@ -77,8 +77,8 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "compose_path": _HOST_SCRAPER_IDEALISTA,
         "service": "scraper",
         "compose_file": "docker-compose.yml",
-        "entrypoint": "python",
-        "subcomando": ["-m", "src.main", "buscar", "--fuente", "idealista-hyper"],
+        "entrypoint": "",
+        "subcomando": ["buscar", "--fuente", "idealista-hyper"],
         "env": {},
         "output_dir": f"{_HOST_OUTPUT_PATH}/idealista",
         # Idealista usa volumen nombrado, sobreescribimos con bind mount
