@@ -8,9 +8,11 @@ from pathlib import Path
 
 import jinja2
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.auth import AuthMiddleware
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 from app.routers import contactos, match, propiedades, scraper
@@ -72,6 +74,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ── Middleware (orden: CORS primero, Auth después) ──────────────
+# CORS debe ir primero para que las preflight OPTIONS no requieran auth
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Auth middleware valida JWT de Supabase en cada request
+app.add_middleware(AuthMiddleware)
+
 # Static files (CSS, JS)
 static_dir = Path(__file__).resolve().parent / "static"
 static_dir.mkdir(exist_ok=True)
@@ -82,6 +97,12 @@ app.include_router(propiedades.router)
 app.include_router(contactos.router)
 app.include_router(match.router)
 app.include_router(scraper.router)
+
+# ── Healthcheck ────────────────────────────────────────────────
+@app.get("/health", include_in_schema=False)
+def health():
+    """Endpoint para healthcheck de Docker. Exento de auth."""
+    return JSONResponse({"status": "ok"})
 
 
 # ---------------------------------------------------------------------------

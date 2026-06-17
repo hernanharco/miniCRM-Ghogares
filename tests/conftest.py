@@ -1,6 +1,7 @@
 """
 Configuración global de tests.
 Usa una base de datos SQLite en memoria para no contaminar la BD real.
+Incluye un token JWT de prueba para la autenticación.
 """
 
 import os
@@ -8,13 +9,29 @@ import tempfile
 from pathlib import Path
 
 import jinja2
+import jwt
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
+from app.config import settings
 from app.database import Base, get_db
 from app.main import app
+
+# ── Token JWT de prueba ────────────────────────────────────────
+TEST_USER_ID = "00000000-0000-0000-0000-000000000001"
+TEST_JWT = jwt.encode(
+    {
+        "sub": TEST_USER_ID,
+        "aud": "authenticated",
+        "role": "authenticated",
+        "exp": 9_999_999_999,
+        "iat": 1_000_000_000,
+    },
+    settings.supabase_jwt_secret,
+    algorithm="HS256",
+)
 
 # Inicializar Jinja2 para los tests (el lifespan no se ejecuta con TestClient)
 _templates_dir = Path(__file__).resolve().parent.parent / "app" / "templates"
@@ -66,8 +83,10 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture
 def client():
-    """Cliente HTTP de prueba."""
-    return TestClient(app)
+    """Cliente HTTP de prueba con token JWT de Supabase."""
+    client = TestClient(app)
+    client.headers["Authorization"] = f"Bearer {TEST_JWT}"
+    return client
 
 
 @pytest.fixture

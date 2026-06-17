@@ -145,6 +145,26 @@
     </button>
 
     <script>
+        // ── Auth: extraer JWT de la URL y pasarlo en requests HTMX ──
+        // El token viene como ?token=JWT del iframe en portal.bayiva.com
+        // Se guarda globalmente y se inyecta en el header Authorization
+        // de cada request HTMX (incluyendo hx-boost).
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const tokenFromUrl = params.get('token');
+            if (tokenFromUrl) {
+                window.AUTH_TOKEN = tokenFromUrl;
+                // Limpiar la URL para que no quede el token visible
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
+            document.addEventListener('htmx:configRequest', function(e) {
+                if (window.AUTH_TOKEN) {
+                    e.detail.headers['Authorization'] = 'Bearer ' + window.AUTH_TOKEN;
+                }
+            });
+        })();
+
         // Mostrar/ocultar boton volver arriba
         window.addEventListener('scroll', function() {
             const btn = document.getElementById('btnArriba');

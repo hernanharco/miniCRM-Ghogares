@@ -34,3 +34,9 @@ data/
 # Logs
 *.log
 logs/
+
+# Informes y documentos de entrega
+informes/
+
+# Videos de demostración
+videos/

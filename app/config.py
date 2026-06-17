@@ -21,6 +21,17 @@ class Settings(BaseSettings):
     # En local: sqlite:///./data/mini_crm.db (persistente en ./data/)
     database_url: str = "sqlite:///./data/mini_crm.db"
 
+    # --- Supabase (para validar JWT) ─────────────────────────────
+    supabase_jwt_secret: str = "565c1bc6029fb4e2d8417c50acb52b8d8e4ef405a1f9044826486222e4bd76e6"
+    supabase_url: str = "https://api.bayiva.com"
+
+    # --- CORS ────────────────────────────────────────────────────
+    cors_origins: str = "https://portal.bayiva.com,https://minicrm.bayiva.com,http://localhost:8002"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     # --- Directorio base (solo para dev local) ───────────────────
     _BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 

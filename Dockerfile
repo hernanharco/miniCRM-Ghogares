@@ -31,6 +31,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY app/ ./app/
 COPY run.sh .
 
+# Crear directorio de datos (para SQLite en entornos sin volumen montado)
+RUN mkdir -p /app/data
+
 # Puerto por defecto
 EXPOSE 8002
 
@@ -38,9 +41,9 @@ EXPOSE 8002
 ENV PORT=8002
 ENV PYTHONUNBUFFERED=1
 
-# Health check
+# Health check (exento de auth)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')" || exit 1
 
 # Comando de arranque
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
