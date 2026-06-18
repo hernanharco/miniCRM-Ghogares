@@ -107,15 +107,11 @@ class RawBody(RootModel):
 def webhook_ghl(
     body: RawBody,
     db: Session = Depends(get_db),
-    x_webhook_key: Optional[str] = Header(None),
 ):
     """
-    Webhook desde GHL. Acepta el payload nativo (con custom.* anidados)
-    y lo transforma al formato del CRM usando mapping_ghl.py.
+    Webhook desde GHL. Sin autenticación adicional (la URL ya es secreta).
+    Acepta el payload nativo de GHL y lo transforma usando mapping_ghl.py.
     """
-    if not x_webhook_key or x_webhook_key != settings.ghl_webhook_key:
-        raise HTTPException(status_code=401, detail="Acceso no autorizado")
-
     payload = body.root
     if not payload:
         return JSONResponse(status_code=400, content={"error": "Payload vacío"})
