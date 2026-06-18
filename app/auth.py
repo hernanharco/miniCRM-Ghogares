@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Middleware de autenticación
 # ---------------------------------------------------------------------------
 
-EXEMPT_PATHS = {"/health"}
+EXEMPT_PATHS = {"/health", "/api/contactos"}
 COOKIE_NAME = "token"
 
 
