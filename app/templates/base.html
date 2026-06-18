@@ -27,6 +27,13 @@
             opacity: 0; visibility: hidden; cursor: pointer; transition: opacity 0.3s, visibility 0.3s;
         }
         .btn-arriba.visible { opacity: 1; visibility: visible; }
+        /* Transición suave al cambiar de contenido */
+        .htmx-swapping { opacity: 0; }
+        .htmx-added { animation: fadeIn 0.15s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
     </style>
 </head>
 <body class="h-full bg-gray-50">
@@ -42,34 +49,40 @@
                     <span class="text-[10px] uppercase tracking-wider text-gray-400 hidden sm:inline">Grupo Hogares</span>
                 </div>
 
-                <!-- Links de navegación -->
+                <!-- Links de navegación (HTMX: solo cambia el main, sin recarga) -->
                 <div class="flex items-center gap-1 overflow-x-auto">
                     <a href="/"
+                       hx-get="/" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path == '/' %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         📊 Dashboard
                     </a>
                     <a href="/propiedades"
+                       hx-get="/propiedades" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path.startswith('/propiedades') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🏘️ Propiedades
                     </a>
                     <a href="/contactos"
+                       hx-get="/contactos" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path.startswith('/contactos') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         👥 Contactos
                     </a>
                     <a href="/pipeline"
+                       hx-get="/pipeline" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path.startswith('/pipeline') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         📊 Pipeline
                     </a>
                     <a href="/matches"
+                       hx-get="/matches" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path.startswith('/matches') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🔗 Matches
                     </a>
                     <a href="/scraper"
+                       hx-get="/scraper" hx-target="main" hx-select="main" hx-push-url="true"
                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
                               {% if request.url.path.startswith('/scraper') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🚀 Scrapers
