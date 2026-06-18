@@ -38,5 +38,8 @@ logs/
 # Informes y documentos de entrega
 informes/
 
+# Audios de demostración
+auido/
+
 # Videos de demostración
 videos/
