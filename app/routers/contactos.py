@@ -57,13 +57,23 @@ def listar_contactos_api(
     return query.order_by(desc(Contacto.updated_at)).all()
 
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 @router.post("/api/contactos", response_model=MensajeResponse)
 def crear_contacto_api(
     data: ContactoCreate,
+    request: Request,
     db: Session = Depends(get_db),
     _auth=Depends(_webhook_o_jwt),
 ):
     """Crea un contacto manualmente o desde webhook de GHL."""
+    import sys
+    logger.info("=== WEBHOOK GHL RECIBIDO ===")
+    logger.info("Payload: %s", data.model_dump())
+    sys.stdout.flush()
+
     contacto = Contacto(
         id_ghl=data.id_ghl or f"ghl_{data.email or ''}",
         nombre=data.nombre,
