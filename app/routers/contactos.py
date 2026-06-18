@@ -57,6 +57,7 @@ def listar_contactos_api(
     return query.order_by(desc(Contacto.updated_at)).all()
 
 
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -112,10 +113,13 @@ async def webhook_ghl(
     if not body:
         return JSONResponse(status_code=400, content={"error": "Payload vacío"})
 
-    logger.info("📥 Webhook GHL recibido: %s", str(body)[:500])
+    logger.info("=" * 50)
+    logger.info("📥 WEBHOOK GHL RECIBIDO")
+    logger.info("Payload completo: %s", json.dumps(body, indent=2)[:2000])
 
     from app.services.mapping_ghl import transformar_contacto
     data = transformar_contacto(body)
+    logger.info("Datos transformados: %s", json.dumps(data, indent=2))
 
     if not data.get("email") and not data.get("id_ghl"):
         return JSONResponse(status_code=400, content={"error": "Falta email o id_ghl"})
