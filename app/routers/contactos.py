@@ -64,18 +64,12 @@ logger = logging.getLogger(__name__)
 @router.post("/api/contactos", response_model=MensajeResponse)
 def crear_contacto_api(
     data: ContactoCreate,
-    request: Request,
     db: Session = Depends(get_db),
     _auth=Depends(_webhook_o_jwt),
 ):
-    """Crea un contacto manualmente o desde webhook de GHL."""
-    import sys
-    logger.info("=== WEBHOOK GHL RECIBIDO ===")
-    logger.info("Payload: %s", data.model_dump())
-    sys.stdout.flush()
-
+    """Crea un contacto desde el portal (formato plano)."""
     contacto = Contacto(
-        id_ghl=data.id_ghl or f"ghl_{data.email or ''}",
+        id_ghl=data.id_ghl or f"manual_{data.email or ''}",
         nombre=data.nombre,
         email=data.email,
         telefono=data.telefono,
@@ -93,15 +87,49 @@ def crear_contacto_api(
     db.commit()
     db.refresh(contacto)
 
-    # Matching automático para este contacto
+    # Matching automático
     try:
-        nuevos_matches = matchear_contacto(db, contacto.id, score_minimo=50)
-        return MensajeResponse(
-            id=contacto.id,
-            mensaje=f"Contacto creado con {len(nuevos_matches)} matches"
-        )
+        nuevos = matchear_contacto(db, contacto.id, score_minimo=50)
+        return MensajeResponse(id=contacto.id, mensaje=f"Contacto creado con {len(nuevos)} matches")
     except Exception:
-        return MensajeResponse(id=contacto.id, mensaje="Contacto creado (matching pendiente)")
+        return MensajeResponse(id=contacto.id, mensaje="Contacto creado")
+
+
+@router.post("/api/webhook/ghl")
+async def webhook_ghl(
+    request: Request,
+    db: Session = Depends(get_db),
+    x_webhook_key: Optional[str] = Header(None),
+):
+    """
+    Webhook desde GHL. Acepta el payload nativo de GHL (con custom.* anidados)
+    y lo transforma al formato del CRM usando mapping_ghl.py.
+    """
+    if not x_webhook_key or x_webhook_key != settings.ghl_webhook_key:
+        raise HTTPException(status_code=401, detail="Acceso no autorizado")
+
+    body = await request.json()
+    if not body:
+        return JSONResponse(status_code=400, content={"error": "Payload vacío"})
+
+    logger.info("📥 Webhook GHL recibido: %s", str(body)[:500])
+
+    from app.services.mapping_ghl import transformar_contacto
+    data = transformar_contacto(body)
+
+    if not data.get("email") and not data.get("id_ghl"):
+        return JSONResponse(status_code=400, content={"error": "Falta email o id_ghl"})
+
+    contacto = Contacto(**data)
+    db.add(contacto)
+    db.commit()
+    db.refresh(contacto)
+
+    try:
+        nuevos = matchear_contacto(db, contacto.id, score_minimo=50)
+        return MensajeResponse(id=contacto.id, mensaje=f"Contacto creado con {len(nuevos)} matches")
+    except Exception:
+        return MensajeResponse(id=contacto.id, mensaje="Contacto creado")
 
 
 @router.get("/api/contactos/{contacto_id}", response_model=ContactoResponse)
