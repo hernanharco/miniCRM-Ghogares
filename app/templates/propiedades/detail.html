@@ -95,18 +95,20 @@
             <h3 class="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Acciones</h3>
             <div class="space-y-2">
                 {% if prop.estado.value == 'disponible' %}
-                <button hx-post="/propiedades/{{ prop.id }}/estado?estado=reservada"
-                        hx-target="body"
-                        class="w-full text-center px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors">
-                    🔒 Marcar como Reservada
-                </button>
+                <form method="POST" action="/propiedades/{{ prop.id }}/estado?estado=reservada">
+                    <button type="submit"
+                            class="w-full text-center px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors">
+                        🔒 Marcar como Reservada
+                    </button>
+                </form>
                 {% endif %}
                 {% if prop.estado.value == 'reservada' or prop.estado.value == 'disponible' %}
-                <button hx-post="/propiedades/{{ prop.id }}/estado?estado=vendida"
-                        hx-target="body"
-                        class="w-full text-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                    ✅ Marcar como Vendida
-                </button>
+                <form method="POST" action="/propiedades/{{ prop.id }}/estado?estado=vendida">
+                    <button type="submit"
+                            class="w-full text-center px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                        ✅ Marcar como Vendida
+                    </button>
+                </form>
                 {% endif %}
                 {% if prop.url %}
                 <a href="{{ prop.url }}" target="_blank"

@@ -9,7 +9,7 @@ Dos caras:
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import Session
 
@@ -322,7 +322,7 @@ def cambiar_estado(
     prop.estado = estado
     db.commit()
 
-    # Si es HTMX, devolvemos la tabla actualizada
+    # Si es HTMX desde la lista, devolvemos la tabla actualizada
     if request.headers.get("HX-Request") == "true":
         propiedades = db.query(Propiedad).order_by(desc(Propiedad.updated_at)).all()
         templates = request.app.state.jinja_env
@@ -337,4 +337,5 @@ def cambiar_estado(
             )
         )
 
-    return {"mensaje": f"Estado actualizado a {estado.value}"}
+    # Si es desde el detalle, redirigimos a la lista
+    return RedirectResponse(url="/propiedades", status_code=303)
