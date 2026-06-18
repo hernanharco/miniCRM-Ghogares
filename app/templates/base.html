@@ -27,58 +27,53 @@
             opacity: 0; visibility: hidden; cursor: pointer; transition: opacity 0.3s, visibility 0.3s;
         }
         .btn-arriba.visible { opacity: 1; visibility: visible; }
-        /* Transición suave al cambiar de contenido */
         .htmx-swapping { opacity: 0; }
         .htmx-added { animation: fadeIn 0.15s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Scroll horizontal suave en nav */
+        .nav-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .nav-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="h-full bg-gray-50">
+<body class="h-full bg-gray-50" hx-boost="true">
 
     <!-- Barra de navegación superior -->
     <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14">
-                <!-- Logo -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 shrink-0">
                     <span class="text-lg">🏠</span>
                     <span class="text-sm font-bold text-gray-900">CRM Bayiva</span>
-                    <span class="text-[10px] uppercase tracking-wider text-gray-400 hidden sm:inline">Grupo Hogares</span>
                 </div>
-
-                <!-- Links de navegación (HTMX: solo cambia el main) -->
-                <div class="flex items-center gap-1 overflow-x-auto" id="nav-links">
+                <div class="flex items-center gap-1 overflow-x-auto nav-scroll ml-4">
                     <a href="/"
-                       hx-get="/" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path == '/' %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         📊 Dashboard
                     </a>
                     <a href="/propiedades"
-                       hx-get="/propiedades" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path.startswith('/propiedades') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🏘️ Propiedades
                     </a>
                     <a href="/contactos"
-                       hx-get="/contactos" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path.startswith('/contactos') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         👥 Contactos
                     </a>
                     <a href="/pipeline"
-                       hx-get="/pipeline" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path.startswith('/pipeline') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         📊 Pipeline
                     </a>
                     <a href="/matches"
-                       hx-get="/matches" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path.startswith('/matches') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🔗 Matches
                     </a>
                     <a href="/scraper"
-                       hx-get="/scraper" hx-target="main" hx-select="#main-content" hx-push-url="true"
-                       class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                       class="px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md transition-colors
+                              {% if request.url.path.startswith('/scraper') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
                         🚀 Scrapers
                     </a>
                 </div>
@@ -87,7 +82,7 @@
     </nav>
 
     <!-- Contenido principal -->
-    <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {% block content %}{% endblock %}
     </main>
 
@@ -115,31 +110,6 @@
                 }
             });
         })();
-
-        // ── Navegación: resaltar link activo ──
-        function highlightActiveNav() {
-            const path = window.location.pathname;
-            document.querySelectorAll('.nav-link').forEach(function(link) {
-                const href = link.getAttribute('href');
-                let isActive = false;
-                if (href === '/' && path === '/') isActive = true;
-                else if (href !== '/' && path.startsWith(href)) isActive = true;
-
-                if (isActive) {
-                    link.classList.add('bg-brand-100', 'text-brand-700');
-                    link.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-100');
-                } else {
-                    link.classList.remove('bg-brand-100', 'text-brand-700');
-                    link.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-100');
-                }
-            });
-        }
-
-        // Al cargar la página
-        highlightActiveNav();
-
-        // Después de cada render HTMX
-        document.addEventListener('htmx:afterSwap', highlightActiveNav);
 
         // ── Boton volver arriba ──
         window.addEventListener('scroll', function() {
