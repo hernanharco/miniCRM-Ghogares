@@ -96,30 +96,34 @@ def crear_contacto_api(
         return MensajeResponse(id=contacto.id, mensaje="Contacto creado")
 
 
+from pydantic import RootModel
+
+
+class RawBody(RootModel):
+    root: dict
+
+
 @router.post("/api/webhook/ghl")
-async def webhook_ghl(
-    request: Request,
+def webhook_ghl(
+    body: RawBody,
     db: Session = Depends(get_db),
     x_webhook_key: Optional[str] = Header(None),
 ):
     """
-    Webhook desde GHL. Acepta el payload nativo de GHL (con custom.* anidados)
+    Webhook desde GHL. Acepta el payload nativo (con custom.* anidados)
     y lo transforma al formato del CRM usando mapping_ghl.py.
     """
     if not x_webhook_key or x_webhook_key != settings.ghl_webhook_key:
         raise HTTPException(status_code=401, detail="Acceso no autorizado")
 
-    body = await request.json()
-    if not body:
+    payload = body.root
+    if not payload:
         return JSONResponse(status_code=400, content={"error": "Payload vacío"})
 
-    logger.info("=" * 50)
-    logger.info("📥 WEBHOOK GHL RECIBIDO")
-    logger.info("Payload completo: %s", json.dumps(body, indent=2)[:2000])
+    logger.info("📥 Webhook GHL - keys: %s", list(payload.keys())[:15])
 
     from app.services.mapping_ghl import transformar_contacto
-    data = transformar_contacto(body)
-    logger.info("Datos transformados: %s", json.dumps(data, indent=2))
+    data = transformar_contacto(payload)
 
     if not data.get("email") and not data.get("id_ghl"):
         return JSONResponse(status_code=400, content={"error": "Falta email o id_ghl"})
