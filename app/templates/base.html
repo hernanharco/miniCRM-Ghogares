@@ -52,32 +52,32 @@
                 <!-- Links de navegación (HTMX: solo cambia el main) -->
                 <div class="flex items-center gap-1 overflow-x-auto" id="nav-links">
                     <a href="/"
-                       hx-get="/" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         📊 Dashboard
                     </a>
                     <a href="/propiedades"
-                       hx-get="/propiedades" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/propiedades" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         🏘️ Propiedades
                     </a>
                     <a href="/contactos"
-                       hx-get="/contactos" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/contactos" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         👥 Contactos
                     </a>
                     <a href="/pipeline"
-                       hx-get="/pipeline" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/pipeline" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         📊 Pipeline
                     </a>
                     <a href="/matches"
-                       hx-get="/matches" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/matches" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         🔗 Matches
                     </a>
                     <a href="/scraper"
-                       hx-get="/scraper" hx-target="main" hx-select="main" hx-push-url="true"
+                       hx-get="/scraper" hx-target="main" hx-select="#main-content" hx-push-url="true"
                        class="nav-link px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                         🚀 Scrapers
                     </a>
@@ -87,7 +87,7 @@
     </nav>
 
     <!-- Contenido principal -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {% block content %}{% endblock %}
     </main>
 
