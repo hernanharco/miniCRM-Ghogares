@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./data/mini_crm.db"
 
     # --- Supabase (para validar JWT) ─────────────────────────────
-    supabase_jwt_secret: str = "565c1bc6029fb4e2d8417c50acb52b8d8e4ef405a1f9044826486222e4bd76e6"
+    supabase_jwt_secret: str = ""  # OBLIGATORIO: definir en .env o variable de entorno
     supabase_url: str = "https://api.bayiva.com"
 
     # --- Webhook GHL ─────────────────────────────────────────────
