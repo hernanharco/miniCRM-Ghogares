@@ -27,13 +27,12 @@
             opacity: 0; visibility: hidden; cursor: pointer; transition: opacity 0.3s, visibility 0.3s;
         }
         .btn-arriba.visible { opacity: 1; visibility: visible; }
-        .nav-scroll { scrollbar-width: none; }
+        .nav-scroll { scrollbar-width: none; -ms-overflow-style: none; }
         .nav-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="h-full bg-gray-50" hx-boost="true">
+<body class="h-full bg-gray-50">
 
-    <!-- Barra de navegación superior -->
     <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14">
@@ -72,12 +71,10 @@
         </div>
     </nav>
 
-    <!-- Contenido principal -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Boton volver arriba -->
     <button id="btnArriba" onclick="window.scrollTo({top:0,behavior:'smooth'})"
             class="btn-arriba bg-brand-600 text-white p-3 rounded-full shadow-lg hover:bg-brand-700 transition-colors"
             aria-label="Volver arriba">
@@ -87,7 +84,7 @@
     </button>
 
     <script>
-        // Auth: token JWT de Supabase (solo para requests HTMX dentro de cada página)
+        // Token para requests HTMX internos (filtros, tablas)
         (function() {
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
@@ -96,13 +93,9 @@
                 window.history.replaceState({}, '', window.location.pathname);
             }
             document.addEventListener('htmx:configRequest', function(e) {
-                if (window.AUTH_TOKEN) {
-                    e.detail.headers['Authorization'] = 'Bearer ' + window.AUTH_TOKEN;
-                }
+                if (window.AUTH_TOKEN) e.detail.headers['Authorization'] = 'Bearer ' + window.AUTH_TOKEN;
             });
         })();
-
-        // Boton volver arriba
         window.addEventListener('scroll', function() {
             const btn = document.getElementById('btnArriba');
             if (btn) btn.classList.toggle('visible', window.scrollY > 400);
