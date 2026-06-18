@@ -27,16 +27,13 @@
             opacity: 0; visibility: hidden; cursor: pointer; transition: opacity 0.3s, visibility 0.3s;
         }
         .btn-arriba.visible { opacity: 1; visibility: visible; }
-        /* Transición solo en contenido, no en nav */
-        #contenido { transition: opacity 0.15s ease-in; }
-        #contenido.htmx-swapping { opacity: 0; }
         .nav-scroll { scrollbar-width: none; }
         .nav-scroll::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="h-full bg-gray-50" hx-boost="true" hx-target="#contenido" hx-select="#contenido" hx-swap="innerHTML">
+<body class="h-full bg-gray-50">
 
-    <!-- Barra de navegación superior (NO se reemplaza) -->
+    <!-- Barra de navegación superior -->
     <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-14">
@@ -75,10 +72,10 @@
         </div>
     </nav>
 
-    <!-- Contenido principal (solo esto se reemplaza) -->
-    <div id="contenido" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Contenido principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
     <!-- Boton volver arriba -->
     <button id="btnArriba" onclick="window.scrollTo({top:0,behavior:'smooth'})"
@@ -90,7 +87,7 @@
     </button>
 
     <script>
-        // Auth: token JWT de Supabase
+        // Auth: token JWT de Supabase (solo para requests HTMX dentro de cada página)
         (function() {
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
@@ -105,26 +102,7 @@
             });
         })();
 
-        // ── Navegación: resaltar link activo ──
-        function actualizarNav() {
-            const path = window.location.pathname;
-            document.querySelectorAll('nav a[href]').forEach(function(a) {
-                const h = a.getAttribute('href');
-                // Quitar clases activas
-                a.classList.remove('bg-brand-100', 'text-brand-700');
-                a.classList.add('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-100');
-
-                // Poner activa si corresponde
-                if ((h === '/' && path === '/') || (h !== '/' && path.startsWith(h))) {
-                    a.classList.add('bg-brand-100', 'text-brand-700');
-                    a.classList.remove('text-gray-600', 'hover:text-gray-900', 'hover:bg-gray-100');
-                }
-            });
-        }
-        actualizarNav();
-        document.addEventListener('htmx:afterSwap', actualizarNav);
-
-        // ── Boton volver arriba ──
+        // Boton volver arriba
         window.addEventListener('scroll', function() {
             const btn = document.getElementById('btnArriba');
             if (btn) btn.classList.toggle('visible', window.scrollY > 400);
