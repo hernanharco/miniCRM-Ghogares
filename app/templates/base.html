@@ -22,116 +22,67 @@
         }
     </script>
     <style>
-        .sidebar-overlay { display: none; }
-        .sidebar-open .sidebar-overlay { display: block; }
-        @media (min-width: 1024px) { .sidebar-overlay { display: none !important; } }
-
         .btn-arriba {
             position: fixed; bottom: 2rem; right: 2rem; z-index: 50;
-            opacity: 0; visibility: hidden; cursor: pointer;
+            opacity: 0; visibility: hidden; cursor: pointer; transition: opacity 0.3s, visibility 0.3s;
         }
         .btn-arriba.visible { opacity: 1; visibility: visible; }
-
-        /* Transiciones suaves con HTMX — solo el contenido cambia */
-        .htmx-swapping { opacity: 0; }
-        .htmx-added { animation: fadeIn 0.2s ease-in; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Scrollbar finito para el main */
-        main { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
-
-        /* Sidebar colapsado en desktop */
-        .sidebar-collapsed #sidebar { width: 4rem; }
-        .sidebar-collapsed #sidebar .nav-label { display: none; }
-        .sidebar-collapsed #sidebar .nav-icon { margin-right: 0; }
-        .sidebar-collapsed #sidebar nav a { justify-content: center; padding: 0.625rem; }
-        .sidebar-collapsed #sidebar .brand-text { display: none; }
-        .sidebar-collapsed #sidebar .sidebar-footer { display: none; }
-        .sidebar-collapsed main { margin-left: 0; }
     </style>
 </head>
-<body class="h-full">
-    <!-- Overlay mobile -->
-    <div class="sidebar-overlay fixed inset-0 bg-black/50 z-20 lg:hidden" onclick="toggleSidebar()"></div>
+<body class="h-full bg-gray-50">
 
-    <div class="min-h-full flex">
-
-        <!-- Sidebar -->
-        <aside id="sidebar"
-               class="fixed inset-y-0 left-0 z-20 w-64 bg-brand-900 text-white flex flex-col
-                      -translate-x-full lg:translate-x-0 lg:static lg:z-auto
-                      transition-all duration-200 ease-in-out
-                      shrink-0">
-
-            <!-- Header -->
-            <div class="flex items-center justify-between px-4 lg:px-5 py-4 lg:py-5 min-h-[4rem]">
-                <div class="flex items-center gap-2 overflow-hidden">
-                    <span class="text-lg shrink-0">🏠</span>
-                    <span class="brand-text text-base lg:text-lg font-bold tracking-tight truncate">CRM Bayiva</span>
+    <!-- Barra de navegación superior -->
+    <nav class="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14">
+                <!-- Logo -->
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🏠</span>
+                    <span class="text-sm font-bold text-gray-900">CRM Bayiva</span>
+                    <span class="text-[10px] uppercase tracking-wider text-gray-400 hidden sm:inline">Grupo Hogares</span>
                 </div>
-                <button onclick="toggleSidebar()" class="lg:hidden text-white/60 hover:text-white p-1 shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+
+                <!-- Links de navegación -->
+                <div class="flex items-center gap-1 overflow-x-auto">
+                    <a href="/"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path == '/' %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        📊 Dashboard
+                    </a>
+                    <a href="/propiedades"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path.startswith('/propiedades') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        🏘️ Propiedades
+                    </a>
+                    <a href="/contactos"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path.startswith('/contactos') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        👥 Contactos
+                    </a>
+                    <a href="/pipeline"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path.startswith('/pipeline') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        📊 Pipeline
+                    </a>
+                    <a href="/matches"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path.startswith('/matches') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        🔗 Matches
+                    </a>
+                    <a href="/scraper"
+                       class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+                              {% if request.url.path.startswith('/scraper') %}bg-brand-100 text-brand-700{% else %}text-gray-600 hover:text-gray-900 hover:bg-gray-100{% endif %}">
+                        🚀 Scrapers
+                    </a>
+                </div>
             </div>
+        </div>
+    </nav>
 
-            <!-- Nav -->
-            <nav class="flex-1 px-2 lg:px-3 space-y-0.5 overflow-y-auto">
-                {% macro nav_item(href, icon, label) %}
-                <a href="{{ href }}"
-                   hx-get="{{ href }}"
-                   hx-target="main"
-                   hx-push-url="true"
-                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-150
-                          {% if request.url.path == href or request.url.path.startswith(href + '/') and href != '/' %}
-                              bg-brand-800 text-white
-                          {% else %}
-                              text-brand-200 hover:bg-brand-800 hover:text-white
-                          {% endif %}">
-                    <span class="nav-icon mr-3 shrink-0 text-base">{{ icon }}</span>
-                    <span class="nav-label truncate">{{ label }}</span>
-                </a>
-                {% endmacro %}
-
-                {{ nav_item('/', '📊', 'Dashboard') }}
-                {{ nav_item('/propiedades', '🏘️', 'Propiedades') }}
-                {{ nav_item('/contactos', '👥', 'Contactos') }}
-                {{ nav_item('/pipeline', '📊', 'Pipeline') }}
-                {{ nav_item('/matches', '🔗', 'Matches') }}
-                {{ nav_item('/scraper', '🚀', 'Scrapers') }}
-            </nav>
-
-            <!-- Footer: colapsar sidebar (solo desktop) -->
-            <div class="sidebar-footer border-t border-brand-800 p-2 lg:p-3">
-                <button onclick="toggleCollapse()"
-                        class="hidden lg:flex w-full items-center gap-3 px-3 py-2 text-sm text-brand-300 hover:text-white hover:bg-brand-800 rounded-lg transition-colors"
-                        id="collapseBtn">
-                    <span class="shrink-0 text-base" id="collapseIcon">◀</span>
-                    <span class="nav-label" id="collapseLabel">Colapsar menú</span>
-                </button>
-            </div>
-        </aside>
-
-        <!-- Hamburger mobile -->
-        <button onclick="toggleSidebar()"
-                class="fixed top-4 left-4 z-30 lg:hidden bg-brand-900 text-white p-2.5 rounded-lg shadow-lg hover:bg-brand-800 transition-colors"
-                aria-label="Menú">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
-
-        <!-- Main content (HTMX target) -->
-        <main class="flex-1 min-w-0 overflow-auto transition-all duration-200">
-            <div class="px-4 sm:px-6 lg:px-8 py-4 lg:py-6 pt-16 lg:pt-6">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
-    </div>
+    <!-- Contenido principal -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
 
     <!-- Boton volver arriba -->
     <button id="btnArriba" onclick="window.scrollTo({top:0,behavior:'smooth'})"
@@ -158,54 +109,14 @@
             });
         })();
 
-        // ── Sidebar colapsable (solo desktop) ──
-        const COLLAPSE_KEY = 'bayiva.sidebar_collapsed';
-
-        function toggleCollapse() {
-            const body = document.body;
-            const collapsed = body.classList.toggle('sidebar-collapsed');
-            try { localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0'); } catch(e) {}
-            updateCollapseUI(collapsed);
-        }
-
-        function updateCollapseUI(collapsed) {
-            const icon = document.getElementById('collapseIcon');
-            const label = document.getElementById('collapseLabel');
-            if (icon) icon.textContent = collapsed ? '▶' : '◀';
-            if (label) label.textContent = collapsed ? 'Expandir' : 'Colapsar menú';
-        }
-
-        // Restaurar estado al cargar
-        (function() {
-            try {
-                if (localStorage.getItem(COLLAPSE_KEY) === '1') {
-                    document.body.classList.add('sidebar-collapsed');
-                    updateCollapseUI(true);
-                }
-            } catch(e) {}
-        })();
-
-        // ── Mobile toggle ──
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const body = document.body;
-            sidebar.classList.toggle('-translate-x-full');
-            body.classList.toggle('sidebar-open');
-            document.body.style.overflow = body.classList.contains('sidebar-open') ? 'hidden' : '';
-        }
-
-        // Cerrar sidebar al navegar en mobile
-        document.querySelectorAll('#sidebar a[href]').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth < 1024) toggleSidebar();
-            });
-        });
-
         // ── Boton volver arriba ──
         window.addEventListener('scroll', function() {
             const btn = document.getElementById('btnArriba');
             if (btn) btn.classList.toggle('visible', window.scrollY > 400);
         });
+
+        // ── Cerrar sesion (redirigir a portal) ──
+        // (cuando se necesite)
     </script>
 </body>
 </html>
