@@ -307,6 +307,23 @@ def detalle_propiedad(propiedad_id: int, request: Request, db: Session = Depends
     )
 
 
+@router.get("/propiedades/{propiedad_id}/cambiar-estado")
+def cambiar_estado_get(
+    propiedad_id: int,
+    request: Request,
+    estado: EstadoPropiedad = Query(...),
+    redirect: str = Query("/propiedades"),
+    db: Session = Depends(get_db),
+):
+    """Cambia el estado de una propiedad via GET (desde el detalle)."""
+    prop = db.query(Propiedad).filter(Propiedad.id == propiedad_id).first()
+    if not prop:
+        return JSONResponse(status_code=404, content={"error": "No encontrada"})
+    prop.estado = estado
+    db.commit()
+    return RedirectResponse(url=redirect, status_code=303)
+
+
 @router.post("/propiedades/{propiedad_id}/estado")
 def cambiar_estado(
     propiedad_id: int,
@@ -314,28 +331,18 @@ def cambiar_estado(
     estado: EstadoPropiedad = Query(...),
     db: Session = Depends(get_db),
 ):
-    """Cambia el estado de una propiedad (disponible → reservada → vendida)."""
+    """Cambia el estado de una propiedad via POST (desde la lista con HTMX)."""
     prop = db.query(Propiedad).filter(Propiedad.id == propiedad_id).first()
     if not prop:
         return JSONResponse(status_code=404, content={"error": "No encontrada"})
-
     prop.estado = estado
     db.commit()
 
-    # Si es HTMX desde la lista, devolvemos la tabla actualizada
     if request.headers.get("HX-Request") == "true":
         propiedades = db.query(Propiedad).order_by(desc(Propiedad.updated_at)).all()
         templates = request.app.state.jinja_env
         template = templates.get_template("propiedades/_table.html")
         return HTMLResponse(
-            template.render(
-                propiedades=propiedades,
-                tipos=TipoInmueble,
-                estados=EstadoPropiedad,
-                sort_by="updated_at",
-                sort_order="desc",
-            )
+            template.render(propiedades=propiedades, tipos=TipoInmueble, estados=EstadoPropiedad, sort_by="updated_at", sort_order="desc")
         )
-
-    # Si es desde el detalle, redirigimos a la lista
     return RedirectResponse(url="/propiedades", status_code=303)
