@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     supabase_url: str = "https://api.bayiva.com"
 
     # --- CORS ────────────────────────────────────────────────────
-    cors_origins: str = "https://portal.bayiva.com,https://minicrm.bayiva.com,http://localhost:8002"
+    cors_origins: str = "https://portal.bayiva.com,https://matching.bayiva.com,http://localhost:8002"
 
     @property
     def cors_origins_list(self) -> list[str]:
