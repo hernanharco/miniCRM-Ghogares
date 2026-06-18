@@ -1,14 +1,17 @@
 """
 Autenticación JWT para CRM Bayiva.
 Valida tokens de Supabase (portal.bayiva.com) usando el JWT secret compartido.
+El token se persiste en una cookie httpOnly para navegación normal (sidebar).
 """
 
 import logging
+from datetime import timedelta
 
 import jwt
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 from app.config import settings
 
@@ -19,17 +22,20 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 EXEMPT_PATHS = {"/health"}
+COOKIE_NAME = "token"
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """
     Middleware que valida el JWT de Supabase en cada request.
 
-    El token se puede enviar de dos formas:
-      1. Header Authorization: Bearer <token>
-      2. Query param: ?token=<token>  (para el iframe en la carga inicial)
+    El token se puede recibir de tres formas (por orden de prioridad):
+      1. Header Authorization: Bearer <token>  (HTMX requests)
+      2. Cookie "token"  (navegación normal + refresh de página)
+      3. Query param: ?token=<token>  (carga inicial del iframe)
 
-    Los paths en EXEMPT_PATHS no requieren autenticación.
+    Cuando el token viene por query param (carga inicial), se persiste
+    en una cookie httpOnly para navegaciones posteriores.
     """
 
     async def dispatch(self, request: Request, call_next):
@@ -39,6 +45,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Intentar obtener el token
         token = _extract_token(request)
+        token_source = _token_source(request)
 
         if not token:
             return JSONResponse(
@@ -55,7 +62,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 options={"require": ["aud", "exp", "sub"]},
             )
             request.state.user = payload
-            # Guardar el token para que los templates puedan usarlo
             request.state.token = token
         except jwt.ExpiredSignatureError:
             logger.warning("Token expirado: %s", request.client)
@@ -76,24 +82,51 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 content={"detail": "Token inválido"},
             )
 
-        return await call_next(request)
+        # Procesar la request
+        response = await call_next(request)
+
+        # Si el token vino por query param (carga inicial del iframe),
+        # persitirlo en una cookie para navegaciones posteriores
+        if token_source == "query" and isinstance(response, Response):
+            response.set_cookie(
+                key=COOKIE_NAME,
+                value=token,
+                max_age=3600,           # 1 hora (match con JWT exp)
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                path="/",
+            )
+
+        return response
 
 
 def _extract_token(request: Request) -> str | None:
-    """Extrae el JWT del header Authorization o del query param ?token=."""
+    """Extrae el JWT de header, cookie o query param."""
     # 1. Header Authorization: Bearer <token>
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         return auth[7:]
 
-    # 2. Query param ?token=... (para iframe)
+    # 2. Cookie "token" (navegación normal)
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        return token
+
+    # 3. Query param ?token=... (carga inicial iframe)
     token = request.query_params.get("token")
     if token:
         return token
 
-    # 3. Cookie (para futura expansión)
-    # token = request.cookies.get("sb-token")
-    # if token:
-    #     return token
+    return None
 
+
+def _token_source(request: Request) -> str | None:
+    """Identifica de dónde se obtuvo el token (para decidir si setear cookie)."""
+    if request.headers.get("Authorization", "").startswith("Bearer "):
+        return "header"
+    if request.cookies.get(COOKIE_NAME):
+        return "cookie"
+    if request.query_params.get("token"):
+        return "query"
     return None
