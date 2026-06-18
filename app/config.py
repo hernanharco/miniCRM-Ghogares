@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = "565c1bc6029fb4e2d8417c50acb52b8d8e4ef405a1f9044826486222e4bd76e6"
     supabase_url: str = "https://api.bayiva.com"
 
+    # --- Webhook GHL ─────────────────────────────────────────────
+    ghl_webhook_key: str = "ghl_bayiva_2026"
+
     # --- CORS ────────────────────────────────────────────────────
     cors_origins: str = "https://portal.bayiva.com,https://matching.bayiva.com,http://localhost:8002"
 

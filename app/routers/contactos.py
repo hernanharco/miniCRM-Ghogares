@@ -1,22 +1,38 @@
 """
 Rutas de contactos (desde GHL).
-Por ahora son endpoints manuales; cuando llegue la API key de GHL
-se agrega la sincronización automática.
+Recibe leads vía webhook desde GHL y los matchea automáticamente.
 """
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.models import Contacto, Match, TipoInmueble
 from app.schemas import ContactoCreate, ContactoResponse, MensajeResponse
 from app.services.matcher import matchear_contacto
 
 router = APIRouter(tags=["contactos"])
+
+
+# ── Dependencia para webhook de GHL ───────────────────────────
+# Acepta tanto JWT (desde el portal) como API key (desde webhook)
+def _webhook_o_jwt(
+    request: Request,
+    x_webhook_key: Optional[str] = Header(None),
+):
+    """Permite acceso via JWT (portal) o via API key (webhook GHL)."""
+    # Si ya pasó el middleware JWT, tiene user en state
+    if hasattr(request.state, "user") and request.state.user:
+        return True
+    # Si viene con la API key del webhook, también pasa
+    if x_webhook_key and x_webhook_key == settings.ghl_webhook_key:
+        return True
+    raise HTTPException(status_code=401, detail="Acceso no autorizado")
 
 
 # =========================================================================
@@ -42,10 +58,14 @@ def listar_contactos_api(
 
 
 @router.post("/api/contactos", response_model=MensajeResponse)
-def crear_contacto_api(data: ContactoCreate, db: Session = Depends(get_db)):
+def crear_contacto_api(
+    data: ContactoCreate,
+    db: Session = Depends(get_db),
+    _auth=Depends(_webhook_o_jwt),
+):
     """Crea un contacto manualmente o desde webhook de GHL."""
     contacto = Contacto(
-        id_ghl=data.id_ghl or f"manual_{data.email or ''}",
+        id_ghl=data.id_ghl or f"ghl_{data.email or ''}",
         nombre=data.nombre,
         email=data.email,
         telefono=data.telefono,
@@ -62,7 +82,16 @@ def crear_contacto_api(data: ContactoCreate, db: Session = Depends(get_db)):
     db.add(contacto)
     db.commit()
     db.refresh(contacto)
-    return MensajeResponse(id=contacto.id, mensaje="Contacto creado")
+
+    # Matching automático para este contacto
+    try:
+        nuevos_matches = matchear_contacto(db, contacto.id, score_minimo=50)
+        return MensajeResponse(
+            id=contacto.id,
+            mensaje=f"Contacto creado con {len(nuevos_matches)} matches"
+        )
+    except Exception:
+        return MensajeResponse(id=contacto.id, mensaje="Contacto creado (matching pendiente)")
 
 
 @router.get("/api/contactos/{contacto_id}", response_model=ContactoResponse)
