@@ -56,6 +56,21 @@
             opacity: 1;
             visibility: visible;
         }
+        /* Transiciones suaves con HTMX */
+        .htmx-swapping {
+            opacity: 0;
+        }
+        .htmx-added {
+            animation: fadeIn 0.2s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* Indicador de carga para hx-boost */
+        .htmx-request .btn-arriba {
+            display: none;
+        }
     </style>
 </head>
 <body class="h-full" hx-boost="true">
@@ -92,31 +107,37 @@
             </div>
             <nav class="flex-1 px-3 lg:px-4 space-y-1">
                 <a href="/"
-                   data-hx-boost="false"
+
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path == '/' %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
                     <span class="mr-3">📊</span>
                     Dashboard
                 </a>
                 <a href="/propiedades"
-                   data-hx-boost="false"
+
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path.startswith('/propiedades') %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
                     <span class="mr-3">🏘️</span>
                     Propiedades
                 </a>
                 <a href="/contactos"
-                   data-hx-boost="false"
+
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path.startswith('/contactos') %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
                     <span class="mr-3">👥</span>
                     Contactos
                 </a>
+                <a href="/pipeline"
+
+                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path.startswith('/pipeline') %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
+                    <span class="mr-3">📊</span>
+                    Pipeline
+                </a>
                 <a href="/matches"
-                   data-hx-boost="false"
+
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path.startswith('/matches') %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
                     <span class="mr-3">🔗</span>
                     Matches
                 </a>
                 <a href="/scraper"
-                   data-hx-boost="false"
+
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if request.url.path.startswith('/scraper') %}bg-brand-800 text-white{% else %}text-brand-200 hover:bg-brand-800 hover:text-white{% endif %} transition-colors">
                     <span class="mr-3">🚀</span>
                     Scrapers
