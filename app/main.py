@@ -12,10 +12,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from sqlalchemy import text
+
 from app.auth import AuthMiddleware
 from app.config import settings
 from app.database import Base, SessionLocal, engine
-from app.routers import contactos, match, propiedades, scraper
+from app.routers import contactos, dashboard, match, pipeline, propiedades, scraper
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -33,6 +35,24 @@ async def lifespan(app: FastAPI):
     # Crear tablas si no existen
     Base.metadata.create_all(bind=engine)
     logger.info("Tablas verificadas/creadas")
+
+    # Migración: agregar columna 'etapa' a matches si no existe (SQLite)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE matches ADD COLUMN etapa VARCHAR(20) DEFAULT 'nuevo'"))
+            conn.commit()
+            logger.info("Migración: columna 'etapa' agregada a matches")
+    except Exception:
+        pass  # Ya existe, ignorar
+
+    # Poner etapa por defecto a matches existentes que tengan NULL
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("UPDATE matches SET etapa = 'nuevo' WHERE etapa IS NULL"))
+            conn.commit()
+            logger.info("Migración: etapa por defecto para matches existentes")
+    except Exception:
+        pass
 
     # Jinja2 environment (necesario para acceso desde routers)
     templates_dir = Path(__file__).resolve().parent / "templates"
@@ -96,7 +116,9 @@ app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 app.include_router(propiedades.router)
 app.include_router(contactos.router)
 app.include_router(match.router)
+app.include_router(pipeline.router)
 app.include_router(scraper.router)
+app.include_router(dashboard.router)
 
 # ── Healthcheck ────────────────────────────────────────────────
 @app.get("/health", include_in_schema=False)

@@ -160,6 +160,15 @@ class Contacto(Base):
 # ---------------------------------------------------------------------------
 
 
+class EtapaPipeline(str, enum.Enum):
+    """Etapas del pipeline comercial."""
+    NUEVO = "nuevo"
+    CONTACTADO = "contactado"
+    NEGOCIACION = "negociacion"
+    CERRADO = "cerrado"
+    PERDIDO = "perdido"
+
+
 class Match(Base):
     """Resultado del matching entre un contacto y una propiedad."""
 
@@ -170,6 +179,7 @@ class Match(Base):
     contacto_id = Column(Integer, ForeignKey("contactos.id"), nullable=False)
     score = Column(Integer, default=0)  # 0-100
     enviado = Column(Boolean, default=False)  # ¿ya se notificó al contacto?
+    etapa = Column(String(20), default=EtapaPipeline.NUEVO.value)  # pipeline comercial
     created_at = Column(DateTime, server_default=func.now())
 
     propiedad = relationship("Propiedad", back_populates="matches")

@@ -15,7 +15,11 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import EstadoPropiedad, Fuente, Propiedad, TipoInmueble
-from app.schemas import MensajeResponse, PropiedadCreate, PropiedadResponse
+from app.schemas import (
+    DashboardStats, MensajeResponse, PaginatedResponse,
+    PropiedadCreate, PropiedadUpdate, PropiedadResponse,
+)
+
 
 router = APIRouter(tags=["propiedades"])
 
@@ -25,7 +29,7 @@ router = APIRouter(tags=["propiedades"])
 # =========================================================================
 
 
-@router.get("/api/propiedades", response_model=list[PropiedadResponse])
+@router.get("/api/propiedades")
 def listar_propiedades_api(
     zona: Optional[str] = Query(None),
     precio_max: Optional[float] = Query(None),
@@ -34,9 +38,13 @@ def listar_propiedades_api(
     tipo: Optional[TipoInmueble] = Query(None),
     estado: Optional[EstadoPropiedad] = Query(None),
     fuente: Optional[Fuente] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(30, ge=1, le=100),
+    sort_by: str = Query("updated_at"),
+    sort_order: str = Query("desc"),
     db: Session = Depends(get_db),
 ):
-    """Lista propiedades con filtros opcionales. Devuelve JSON."""
+    """Lista propiedades con filtros opcionales. Devuelve JSON paginado."""
     query = db.query(Propiedad)
 
     if zona:
@@ -54,7 +62,29 @@ def listar_propiedades_api(
     if fuente:
         query = query.filter(Propiedad.fuente == fuente)
 
-    return query.order_by(desc(Propiedad.updated_at)).all()
+    # Ordenamiento
+    col_map = {
+        "titulo": Propiedad.titulo, "precio": Propiedad.precio,
+        "zona": Propiedad.zona, "metros": Propiedad.metros,
+        "habitaciones": Propiedad.habitaciones, "estado": Propiedad.estado,
+        "updated_at": Propiedad.updated_at, "created_at": Propiedad.created_at,
+    }
+    col = col_map.get(sort_by, Propiedad.updated_at)
+    order_fn = desc if sort_order == "desc" else asc
+    query = query.order_by(order_fn(col))
+
+    # Paginación
+    total = query.count()
+    total_pages = max(1, (total + limit - 1) // limit)
+    items = query.offset((page - 1) * limit).limit(limit).all()
+
+    return {
+        "items": [PropiedadResponse.model_validate(p).model_dump() for p in items],
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+    }
 
 
 @router.get("/api/propiedades/{propiedad_id}", response_model=PropiedadResponse)
@@ -74,6 +104,25 @@ def crear_propiedad_api(data: PropiedadCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(propiedad)
     return MensajeResponse(id=propiedad.id, mensaje="Propiedad creada")
+
+
+@router.put("/api/propiedades/{propiedad_id}", response_model=PropiedadResponse)
+def actualizar_propiedad_api(
+    propiedad_id: int,
+    data: PropiedadUpdate,
+    db: Session = Depends(get_db),
+):
+    """Actualiza una propiedad (cambio de estado, precio, etc.)."""
+    prop = db.query(Propiedad).filter(Propiedad.id == propiedad_id).first()
+    if not prop:
+        return JSONResponse(status_code=404, content={"error": "Propiedad no encontrada"})
+    
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(prop, key, value)
+    db.commit()
+    db.refresh(prop)
+    return prop
 
 
 # =========================================================================

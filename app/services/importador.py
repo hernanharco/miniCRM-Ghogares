@@ -14,7 +14,8 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import EstadoPropiedad, Fuente, Propiedad, TipoInmueble
+from app.models import Contacto, EstadoPropiedad, Fuente, Propiedad, TipoInmueble
+from app.services.matcher import matchear_contacto
 
 logger = logging.getLogger(__name__)
 
@@ -115,8 +116,19 @@ def importar_desde_scraper(db: Session) -> dict:
         importadas += 1
 
     db.commit()
+
+    # Matching automático para las nuevas propiedades
+    if importadas > 0:
+        contactos = db.query(Contacto).all()
+        total_matches = 0
+        for c in contactos:
+            nuevos = matchear_contacto(db, c.id, score_minimo=50)
+            total_matches += len(nuevos)
+        if total_matches > 0:
+            logger.info("⚡ Matching automático: %d nuevos matches generados", total_matches)
+
     logger.info("Importación completada: %d importadas, %d omitidas", importadas, omitidas)
-    return {"importadas": importadas, "omitidas": omitidas}
+    return {"importadas": importadas, "omitidas": omitidas, "matches_nuevos": total_matches if importadas > 0 else 0}
 
 
 def _limpiar_url_fotocasa(url: str) -> str:

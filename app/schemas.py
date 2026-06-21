@@ -111,6 +111,16 @@ class PropiedadCreate(BaseModel):
         return v
 
 
+class PropiedadUpdate(BaseModel):
+    """Esquema para actualizar parcialmente una propiedad."""
+
+    estado: Optional[EstadoPropiedad] = None
+    titulo: Optional[str] = None
+    precio: Optional[float] = None
+    descripcion: Optional[str] = None
+    agencia: Optional[str] = None
+
+
 class PropiedadResponse(BaseModel):
     """Esquema de respuesta para una propiedad."""
 
@@ -135,12 +145,26 @@ class PropiedadResponse(BaseModel):
     estado_inmueble: Optional[str] = None
     estado: Optional[str] = None
     descripcion: Optional[str] = None
+    fotos: list[str] = []
     agencia: Optional[str] = None
     fecha_publicacion: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+    @field_validator("fotos", mode="before")
+    @classmethod
+    def fotos_json_a_lista(cls, v):
+        """Convierte el string JSON '["url"]' a lista ['url']."""
+        if isinstance(v, str):
+            try:
+                import json
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return v or []
 
 
 # =============================================================================
@@ -171,3 +195,37 @@ class MensajeResponse(BaseModel):
 
     mensaje: str
     id: Optional[int] = None
+
+
+# =============================================================================
+# Paginación
+# =============================================================================
+
+
+class PaginatedResponse(BaseModel):
+    """Respuesta paginada genérica."""
+
+    items: list
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+
+# =============================================================================
+# Dashboard
+# =============================================================================
+
+
+class DashboardStats(BaseModel):
+    """Estadísticas para el dashboard."""
+
+    total_propiedades: int = 0
+    total_contactos: int = 0
+    total_matches: int = 0
+    propiedades_disponibles: int = 0
+    propiedades_reservadas: int = 0
+    propiedades_vendidas: int = 0
+    matches_pendientes: int = 0
+    matches_enviados: int = 0
+    contactos_sin_match: int = 0
