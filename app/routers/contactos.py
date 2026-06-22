@@ -47,6 +47,8 @@ def listar_contactos_api(
     q: Optional[str] = Query(None, description="Búsqueda por nombre"),
     nombre: Optional[str] = Query(None),
     zona: Optional[str] = Query(None),
+    plazo: Optional[str] = Query(None, description="Filtrar por plazo"),
+    motivacion: Optional[str] = Query(None, description="Filtrar por motivación"),
     db: Session = Depends(get_db),
 ):
     """Lista contactos con paginación y búsqueda."""
@@ -57,6 +59,10 @@ def listar_contactos_api(
         query = query.filter(Contacto.nombre.ilike(f"%{search_term}%"))
     if zona:
         query = query.filter(Contacto.zona.ilike(f"%{zona}%"))
+    if plazo:
+        query = query.filter(Contacto.plazo == plazo)
+    if motivacion:
+        query = query.filter(Contacto.motivacion == motivacion)
 
     total = query.count()
     total_pages = max(1, (total + limit - 1) // limit)
