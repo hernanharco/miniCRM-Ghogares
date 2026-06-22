@@ -60,6 +60,20 @@ _HOST_SCRAPER_FOTOCASA = os.environ.get("SCRAPER_FOTOCASA_PATH", "/data/bayiva/s
 _HOST_SCRAPER_IDEALISTA = os.environ.get("SCRAPER_IDEALISTA_PATH", "/data/bayiva/scraperidealista")
 _HOST_OUTPUT_PATH = os.environ.get("SCRAPER_OUTPUT_PATH", "/data/bayiva/output")
 
+
+def _leer_env(env_path: str, key: str) -> str:
+    """Lee una variable de entorno desde un archivo .env."""
+    try:
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith(f"{key}="):
+                    return line.split("=", 1)[1].strip().strip("\"'")
+    except Exception:
+        pass
+    return ""
+
+
 SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
     "fotocasa": {
         "compose_path": _HOST_SCRAPER_FOTOCASA,
@@ -492,16 +506,3 @@ def _leer_contador_hyper() -> int:
         except Exception:
             pass
     return 0
-
-
-def _leer_env(env_path: str, key: str) -> str:
-    """Lee una variable de entorno desde un archivo .env."""
-    try:
-        with open(env_path) as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith(f"{key}="):
-                    return line.split("=", 1)[1].strip().strip("\"'")
-    except Exception:
-        pass
-    return ""
