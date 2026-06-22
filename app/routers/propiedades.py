@@ -31,6 +31,7 @@ router = APIRouter(tags=["propiedades"])
 
 @router.get("/api/propiedades")
 def listar_propiedades_api(
+    q: Optional[str] = Query(None),
     zona: Optional[str] = Query(None),
     precio_max: Optional[float] = Query(None),
     precio_min: Optional[float] = Query(None),
@@ -47,6 +48,15 @@ def listar_propiedades_api(
     """Lista propiedades con filtros opcionales. Devuelve JSON paginado."""
     query = db.query(Propiedad)
 
+    # Búsqueda de texto libre
+    if q:
+        query = query.filter(
+            or_(
+                Propiedad.titulo.ilike(f"%{q}%"),
+                Propiedad.direccion.ilike(f"%{q}%"),
+                Propiedad.zona.ilike(f"%{q}%"),
+            )
+        )
     if zona:
         query = query.filter(Propiedad.zona.ilike(f"%{zona}%"))
     if precio_max is not None:
@@ -61,6 +71,38 @@ def listar_propiedades_api(
         query = query.filter(Propiedad.estado == estado)
     if fuente:
         query = query.filter(Propiedad.fuente == fuente)
+
+    # Contadores por tipo (sin filtro de tipo)
+    query_sin_tipo = db.query(Propiedad)
+    if q:
+        query_sin_tipo = query_sin_tipo.filter(or_(
+            Propiedad.titulo.ilike(f"%{q}%"), Propiedad.direccion.ilike(f"%{q}%"), Propiedad.zona.ilike(f"%{q}%")))
+    if zona: query_sin_tipo = query_sin_tipo.filter(Propiedad.zona.ilike(f"%{zona}%"))
+    if precio_max is not None: query_sin_tipo = query_sin_tipo.filter(Propiedad.precio <= precio_max)
+    if precio_min is not None: query_sin_tipo = query_sin_tipo.filter(Propiedad.precio >= precio_min)
+    if habitaciones is not None: query_sin_tipo = query_sin_tipo.filter(Propiedad.habitaciones == habitaciones)
+    if estado: query_sin_tipo = query_sin_tipo.filter(Propiedad.estado == estado)
+    
+    tipo_counts_raw = query_sin_tipo.with_entities(
+        Propiedad.tipo, func.count(Propiedad.id)
+    ).group_by(Propiedad.tipo).all()
+    tipo_counts = {t.value: c for t, c in tipo_counts_raw}
+
+    # Contadores por estado (sin filtro de estado)
+    query_sin_estado = db.query(Propiedad)
+    if q:
+        query_sin_estado = query_sin_estado.filter(or_(
+            Propiedad.titulo.ilike(f"%{q}%"), Propiedad.direccion.ilike(f"%{q}%"), Propiedad.zona.ilike(f"%{q}%")))
+    if zona: query_sin_estado = query_sin_estado.filter(Propiedad.zona.ilike(f"%{zona}%"))
+    if precio_max is not None: query_sin_estado = query_sin_estado.filter(Propiedad.precio <= precio_max)
+    if precio_min is not None: query_sin_estado = query_sin_estado.filter(Propiedad.precio >= precio_min)
+    if habitaciones is not None: query_sin_estado = query_sin_estado.filter(Propiedad.habitaciones == habitaciones)
+    if tipo: query_sin_estado = query_sin_estado.filter(Propiedad.tipo == tipo)
+    
+    estado_counts_raw = query_sin_estado.with_entities(
+        Propiedad.estado, func.count(Propiedad.id)
+    ).group_by(Propiedad.estado).all()
+    estado_counts = {e.value: c for e, c in estado_counts_raw}
 
     # Ordenamiento
     col_map = {
@@ -84,6 +126,8 @@ def listar_propiedades_api(
         "page": page,
         "limit": limit,
         "total_pages": total_pages,
+        "tipo_counts": tipo_counts,
+        "estado_counts": estado_counts,
     }
 
 
