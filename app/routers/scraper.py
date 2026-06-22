@@ -79,9 +79,8 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "compose_file": "docker-compose.yml",
         "entrypoint": "",
         "subcomando": ["buscar", "--fuente", "idealista-hyper"],
-        "env": {},
+        "env": {"HYPER_API_KEY": _leer_env(f"{_HOST_SCRAPER_IDEALISTA}/.env", "HYPER_API_KEY")},
         "output_dir": f"{_HOST_OUTPUT_PATH}/idealista",
-        # Idealista usa volumen nombrado, sobreescribimos con bind mount
         "container_output": "/app/output",
         "extra_volumes": [f"{_HOST_OUTPUT_PATH}/idealista:/app/output"],
     },
@@ -493,3 +492,16 @@ def _leer_contador_hyper() -> int:
         except Exception:
             pass
     return 0
+
+
+def _leer_env(env_path: str, key: str) -> str:
+    """Lee una variable de entorno desde un archivo .env."""
+    try:
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith(f"{key}="):
+                    return line.split("=", 1)[1].strip().strip("\"'")
+    except Exception:
+        pass
+    return ""
