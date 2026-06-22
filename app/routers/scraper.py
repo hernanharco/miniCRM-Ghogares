@@ -97,6 +97,9 @@ def ejecutar_scraper(
 ):
     """Ejecuta un scraper (Fotocasa o Idealista) e importa los resultados al CRM."""
     fuente = req.fuente.lower()
+    # Aliases: "idealista" → "idealista-hyper"
+    ALIASES = {"idealista": "idealista-hyper", "fotocasa-api": "fotocasa"}
+    fuente = ALIASES.get(fuente, fuente)
     if fuente not in SCRAPER_CONFIG:
         return ScraperEjecutarResponse(
             status="error",
