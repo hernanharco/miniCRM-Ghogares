@@ -80,7 +80,7 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "service": "scraper",
         "compose_file": "docker-compose.yml",
         "entrypoint": "python3",
-        "subcomando": ["-m", "src.scraper_api", "buscar"],
+        "subcomando": ["-m", "src.scraper_pipeline", "buscar"],
         "env": {},
         "output_dir": f"{_HOST_OUTPUT_PATH}/fotocasa",
         "container_output": "/output",
