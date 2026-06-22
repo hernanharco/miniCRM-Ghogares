@@ -5,7 +5,7 @@ Vista kanban de matches organizados por etapa del pipeline.
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import EtapaPipeline, Match
@@ -95,8 +95,13 @@ def mover_match(
 
 @router.get("/api/pipeline")
 def api_pipeline(db: Session = Depends(get_db)):
-    """Lista todos los matches con su etapa."""
-    matches = db.query(Match).order_by(Match.created_at.desc()).all()
+    """Lista todos los matches con su etapa y datos completos de propiedad/contacto."""
+    matches = (
+        db.query(Match)
+        .options(joinedload(Match.propiedad), joinedload(Match.contacto))
+        .order_by(Match.created_at.desc())
+        .all()
+    )
     return [
         {
             "id": m.id,
@@ -106,6 +111,16 @@ def api_pipeline(db: Session = Depends(get_db)):
             "etapa": m.etapa,
             "enviado": m.enviado,
             "created_at": str(m.created_at),
+            "propiedad": {
+                "id": m.propiedad.id,
+                "titulo": m.propiedad.titulo,
+                "precio": m.propiedad.precio,
+                "zona": m.propiedad.zona,
+            } if m.propiedad else None,
+            "contacto": {
+                "id": m.contacto.id,
+                "nombre": m.contacto.nombre,
+            } if m.contacto else None,
         }
         for m in matches
     ]

@@ -40,21 +40,40 @@ def _webhook_o_jwt(
 # =========================================================================
 
 
-@router.get("/api/contactos", response_model=list[ContactoResponse])
+@router.get("/api/contactos")
 def listar_contactos_api(
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=100),
+    q: Optional[str] = Query(None, description="Búsqueda por nombre"),
     nombre: Optional[str] = Query(None),
     zona: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
-    """Lista contactos."""
+    """Lista contactos con paginación y búsqueda."""
     query = db.query(Contacto)
 
-    if nombre:
-        query = query.filter(Contacto.nombre.ilike(f"%{nombre}%"))
+    search_term = q or nombre
+    if search_term:
+        query = query.filter(Contacto.nombre.ilike(f"%{search_term}%"))
     if zona:
         query = query.filter(Contacto.zona.ilike(f"%{zona}%"))
 
-    return query.order_by(desc(Contacto.updated_at)).all()
+    total = query.count()
+    total_pages = max(1, (total + limit - 1) // limit)
+    items = (
+        query.order_by(desc(Contacto.updated_at))
+        .offset((page - 1) * limit)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "items": [ContactoResponse.model_validate(c).model_dump() for c in items],
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+    }
 
 
 import json

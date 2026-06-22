@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 
 from sqlalchemy import or_
 
+from sqlalchemy.orm import joinedload
+
 from app.database import get_db
 from app.models import Contacto, Match, Propiedad
 from app.services.matcher import matchear_contacto, matchear_todos
@@ -44,8 +46,11 @@ def listar_matches_api(
     limit: int = Query(50),
     db: Session = Depends(get_db),
 ):
-    """Lista matches existentes."""
-    query = db.query(Match)
+    """Lista matches existentes con datos de propiedad y contacto."""
+    query = db.query(Match).options(
+        joinedload(Match.propiedad),
+        joinedload(Match.contacto),
+    )
 
     if contacto_id:
         query = query.filter(Match.contacto_id == contacto_id)
@@ -61,7 +66,18 @@ def listar_matches_api(
             "contacto_id": m.contacto_id,
             "score": m.score,
             "enviado": m.enviado,
+            "etapa": m.etapa,
             "created_at": m.created_at.isoformat() if m.created_at else None,
+            "propiedad": {
+                "id": m.propiedad.id,
+                "titulo": m.propiedad.titulo,
+                "precio": m.propiedad.precio,
+                "zona": m.propiedad.zona,
+            } if m.propiedad else None,
+            "contacto": {
+                "id": m.contacto.id,
+                "nombre": m.contacto.nombre,
+            } if m.contacto else None,
         }
         for m in matches
     ]

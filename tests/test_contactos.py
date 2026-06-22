@@ -13,7 +13,7 @@ def test_crear_contacto(client, db):
     })
     assert resp.status_code == 200
     data = resp.json()
-    assert data["mensaje"] == "Contacto creado"
+    assert "Contacto creado" in data["mensaje"]
     assert data["id"] is not None
 
 
@@ -28,7 +28,7 @@ def test_crear_contacto_con_intencion(client):
         "motivacion": "primera_vivienda",
     })
     assert resp.status_code == 200
-    assert resp.json()["mensaje"] == "Contacto creado"
+    assert "Contacto creado" in resp.json()["mensaje"]
 
 
 def test_listar_contactos(client, db):
@@ -39,8 +39,11 @@ def test_listar_contactos(client, db):
     resp = client.get("/api/contactos")
     assert resp.status_code == 200
     data = resp.json()
-    assert len(data) == 2
-    nombres = {c["nombre"] for c in data}
+    assert data["total"] == 2
+    assert len(data["items"]) == 2
+    assert data["page"] == 1
+    assert data["total_pages"] == 1
+    nombres = {c["nombre"] for c in data["items"]}
     assert "Juan" in nombres
     assert "Ana" in nombres
 

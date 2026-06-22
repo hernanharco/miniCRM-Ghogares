@@ -101,6 +101,7 @@ class Propiedad(Base):
     descripcion = Column(Text, nullable=True)
     fotos = Column(Text, default="[]")  # JSON array de URLs
     agencia = Column(String(200), nullable=True)
+    telefono_contacto = Column(String(20), nullable=True)  # Teléfono del anunciante
     fecha_publicacion = Column(Date, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

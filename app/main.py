@@ -54,6 +54,15 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
 
+    # Migración: agregar columna 'telefono_contacto' a propiedades si no existe (SQLite)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE propiedades ADD COLUMN telefono_contacto VARCHAR(20)"))
+            conn.commit()
+            logger.info("Migración: columna 'telefono_contacto' agregada a propiedades")
+    except Exception:
+        pass  # Ya existe, ignorar
+
     # Jinja2 environment (necesario para acceso desde routers)
     templates_dir = Path(__file__).resolve().parent / "templates"
     app.state.jinja_env = jinja2.Environment(

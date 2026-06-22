@@ -101,7 +101,7 @@ class PropiedadCreate(BaseModel):
     descripcion: Optional[str] = None
     fotos: str = "[]"
     agencia: Optional[str] = None
-    fecha_publicacion: Optional[date] = None
+    telefono_contacto: Optional[str] = None
 
     @field_validator("precio")
     @classmethod
@@ -147,6 +147,7 @@ class PropiedadResponse(BaseModel):
     descripcion: Optional[str] = None
     fotos: list[str] = []
     agencia: Optional[str] = None
+    telefono_contacto: Optional[str] = None
     fecha_publicacion: Optional[datetime] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

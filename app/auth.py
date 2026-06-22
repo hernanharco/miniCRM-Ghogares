@@ -39,8 +39,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        # Paths exentos (healthcheck de Docker)
-        if request.url.path in EXEMPT_PATHS:
+        # CORS preflight y healthcheck pasan sin autenticación
+        if request.method == "OPTIONS" or request.url.path in EXEMPT_PATHS:
             return await call_next(request)
 
         # Intentar obtener el token
