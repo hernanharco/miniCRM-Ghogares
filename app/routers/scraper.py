@@ -403,7 +403,7 @@ def _importar_propiedades(
         if existe:
             # Actualizar campos que pueden haber cambiado o estar vacios
             actualizado = False
-            for campo in ("metros", "habitaciones", "banos", "precio", "titulo", "zona", "tipo"):
+            for campo in ("metros", "habitaciones", "banos", "precio", "titulo", "zona", "tipo", "telefono_contacto"):
                 nuevo_val = raw.get(campo)
                 if nuevo_val is not None and nuevo_val != "":
                     setattr(existe, campo, nuevo_val)
@@ -450,6 +450,7 @@ def _importar_propiedades(
             url=url,
             fotos=fotos_json,
             descripcion=raw.get("descripcion"),
+            telefono_contacto=raw.get("telefono_contacto"),
             estado=EstadoPropiedad.DISPONIBLE,
         )
         db.add(propiedad)
