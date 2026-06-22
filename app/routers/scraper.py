@@ -79,13 +79,12 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
         "compose_path": _HOST_SCRAPER_FOTOCASA,
         "service": "scraper",
         "compose_file": "docker-compose.yml",
-        "entrypoint": "scraper-fotocasa",
-        "subcomando": "buscar",
-        "env": {"BAYIVA_DB_PATH": "/data/bayiva.db"},
-        "output_dir": f"{_HOST_SCRAPER_FOTOCASA}/output",
-        # El docker-compose.yml de fotocasa monta ./output:/output
-        # Por eso el output_dir es {compose_path}/output
+        "entrypoint": "python3",
+        "subcomando": ["-m", "src.scraper_api", "buscar"],
+        "env": {},
+        "output_dir": f"{_HOST_OUTPUT_PATH}/fotocasa",
         "container_output": "/output",
+        "extra_volumes": [f"{_HOST_OUTPUT_PATH}/fotocasa:/output"],
     },
     "idealista-hyper": {
         "compose_path": _HOST_SCRAPER_IDEALISTA,
@@ -146,6 +145,11 @@ def ejecutar_scraper(
         "-f", compose_file,
         "run", "--rm",
     ]
+
+    # Override entrypoint si está configurado
+    ep = config.get("entrypoint", "")
+    if ep:
+        cmd.extend(["--entrypoint", ep])
 
     # Pasar variables de entorno específicas del scraper
     for k, v in config["env"].items():
