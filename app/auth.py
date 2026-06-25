@@ -43,6 +43,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or request.url.path in EXEMPT_PATHS:
             return await call_next(request)
 
+        # Modo desarrollo: si no hay JWT secret configurado, skip auth
+        if not settings.supabase_jwt_secret:
+            return await call_next(request)
+
         # Intentar obtener el token
         token = _extract_token(request)
         token_source = _token_source(request)

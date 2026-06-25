@@ -77,15 +77,15 @@
         </div>
     </div>
 
-    <!-- Idealista -->
+    <!-- Idealista (simplificado: solo cantidad de propiedades, siempre más recientes) -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <div>
                 <h3 class="text-lg font-semibold text-gray-900">🏠 Idealista</h3>
-                <p class="text-sm text-gray-500">Extrae propiedades de idealista.com</p>
+                <p class="text-sm text-gray-500">Últimas publicaciones ordenadas por fecha</p>
             </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                ✅ Hyper Solutions
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                ⚡ Hyper Solutions
             </span>
         </div>
         <div class="p-6">
@@ -93,27 +93,18 @@
                   hx-target="#resultado-idealista"
                   hx-indicator="#spinner-id"
                   data-scraper-form="id">
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Zona</label>
-                        <input type="text" name="zona" id="id-zona" value="valencia"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                <div class="flex items-end gap-4 mb-4">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">🏘️ Cantidad de propiedades</label>
+                        <input type="number" name="max_items" id="id-max-items" value="30" min="1" max="500"
+                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <p class="text-xs text-gray-400 mt-1">¿Cuántas propiedades querés traer?</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio máximo (€)</label>
-                        <input type="text" name="precio_max" id="id-precio-max"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                               placeholder="Ej: 200000 o vacío = sin límite">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Precio mínimo (€)</label>
-                        <input type="text" name="precio_min" id="id-precio-min" value="0"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Páginas</label>
-                        <input type="number" name="max_paginas" id="id-paginas" value="3" min="1" max="20"
-                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <div class="flex-shrink-0">
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-center">
+                            <p class="text-xs text-purple-600 font-medium">📅 Orden</p>
+                            <p class="text-sm text-purple-800 font-semibold">Más recientes</p>
+                        </div>
                     </div>
                 </div>
 
@@ -126,14 +117,14 @@
                         </svg>
                         Ejecutando...
                     </span>
-                    <span class="htmx-default">▶ Ejecutar Idealista</span>
+                    <span class="htmx-default">▶ Traer propiedades</span>
                 </button>
             </form>
 
-            <div class="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-                <strong>ℹ️ Hyper Solutions:</strong> Usa API de bypass de DataDome.
-                No necesita navegador ni IP residencial.
-                Requiere <code class="font-mono">HYPER_API_KEY</code> en el .env.
+            <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-800">
+                <strong>📌 Siempre ordenado por más recientes.</strong>
+                Las propiedades se importan automáticamente al CRM y se generan matches con los contactos activos.
+                Zona configurada: <code class="font-mono">valencia-provincia</code> (desde <code class="font-mono">config/busqueda.prod.yaml</code>).
             </div>
 
             <!-- Resultado -->

@@ -70,19 +70,24 @@ async def lifespan(app: FastAPI):
         autoescape=True,
     )
 
-    # Importar datos del scraper existente al arrancar
+    # Importar datos del scraper existente al arrancar (solo si no hay propiedades)
     try:
         from app.services.importador import importar_desde_scraper
 
         db = SessionLocal()
         try:
-            resultado = importar_desde_scraper(db)
-            if resultado.get("importadas", 0) > 0:
-                logger.info("✅ Importadas %d propiedades del scraper", resultado["importadas"])
-            elif resultado.get("error"):
-                logger.warning("⚠️  Import: %s", resultado["error"])
+            from app.models import Propiedad
+            ya_hay_props = db.query(Propiedad).count() > 0
+            if not ya_hay_props:
+                resultado = importar_desde_scraper(db)
+                if resultado.get("importadas", 0) > 0:
+                    logger.info("✅ Importadas %d propiedades del scraper", resultado["importadas"])
+                elif resultado.get("error"):
+                    logger.warning("⚠️  Import: %s", resultado["error"])
+                else:
+                    logger.info("ℹ️  Import: %d importadas, %d omitidas", resultado.get("importadas", 0), resultado.get("omitidas", 0))
             else:
-                logger.info("ℹ️  Import: %d importadas, %d omitidas", resultado.get("importadas", 0), resultado.get("omitidas", 0))
+                logger.info("ℹ️  Import: saltado (ya hay %d propiedades en la BD)", ya_hay_props)
         finally:
             db.close()
     except Exception as e:

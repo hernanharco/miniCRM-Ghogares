@@ -34,9 +34,12 @@ router = APIRouter(tags=["scraper"])
 # ─── Models ───────────────────────────────────────────────────────────────
 
 class ScraperEjecutarRequest(BaseModel):
-    fuente: str = "fotocasa"  # "fotocasa" | "idealista-uc"
+    fuente: str = "fotocasa"  # "fotocasa" | "idealista-hyper"
+    # Campos para idealista (nuevo: solo cantidad de props, siempre más recientes)
+    max_items: int = 30  # Idealista: cantidad de propiedades a obtener
+    # Campos legacy para fotocasa
     zona: str = "valencia"
-    precio_max: Optional[float] = 200000
+    precio_max: Optional[float] = None  # None = sin filtro de precio
     precio_min: Optional[float] = None
     max_paginas: int = 3
 
@@ -102,129 +105,87 @@ SCRAPER_CONFIG: Dict[str, Dict[str, Any]] = {
 
 # ─── API endpoint: ejecutar scraper ──────────────────────────────────────
 
+_IDEALISTA_API_URL = os.environ.get("IDEALISTA_API_URL", "http://localhost:9091")
+
+
 @router.post("/api/scraper/ejecutar", response_model=ScraperEjecutarResponse)
 def ejecutar_scraper(
     req: ScraperEjecutarRequest,
     db: Session = Depends(get_db),
 ):
-    """Ejecuta un scraper (Fotocasa o Idealista) e importa los resultados al CRM."""
+    """Ejecuta un scraper (Fotocasa o Idealista) e importa los resultados al CRM.
+    
+    Idealista usa el API Service (FastAPI) en lugar de Docker.
+    """
     fuente = req.fuente.lower()
-    # Aliases: "idealista" → "idealista-hyper"
     ALIASES = {"idealista": "idealista-hyper", "fotocasa-api": "fotocasa"}
     fuente = ALIASES.get(fuente, fuente)
-    if fuente not in SCRAPER_CONFIG:
+    es_idealista = "idealista" in fuente
+
+    if fuente not in SCRAPER_CONFIG and not es_idealista:
         return ScraperEjecutarResponse(
             status="error",
             fuente=fuente,
             mensaje=f"Fuente no soportada: {fuente}. Opciones: {list(SCRAPER_CONFIG.keys())}",
         )
 
-    config = SCRAPER_CONFIG[fuente]
+    # ─── IDEALISTA: via API Service ─────────────────────────────────────
+    if es_idealista:
+        return _ejecutar_idealista_via_api(req, db)
 
-    # Verificar que existe el docker socket
-    docker_socket = Path("/var/run/docker.sock")
-    if not docker_socket.exists():
-        return ScraperEjecutarResponse(
-            status="error",
-            fuente=fuente,
-            mensaje="Docker socket no disponible. El CRM no puede ejecutar scrapers en este entorno.",
-        )
+    # ─── FOTOCASA: via API Service ──────────────────────────────────────
+    return _ejecutar_fotocasa_via_api(req, db)
 
-    # Generar output path
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    zona_archivo = req.zona.lower().replace(" ", "_")
-    output_filename = f"crm_{fuente}_{zona_archivo}_{timestamp}.json"
-    output_dir = Path(config["output_dir"])
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / output_filename
 
-    # Armar comando Docker Compose
-    compose_file = f"{config['compose_path']}/{config['compose_file']}"
-    cmd = [
-        "docker", "compose",
-        "-f", compose_file,
-        "run", "--rm",
-    ]
+def _ejecutar_idealista_via_api(
+    req: ScraperEjecutarRequest,
+    db: Session,
+) -> ScraperEjecutarResponse:
+    """Llama al API Service de Idealista (HTTP) en vez de ejecutar Docker."""
+    import requests as http_requests
 
-    # Override entrypoint si está configurado
-    ep = config.get("entrypoint", "")
-    if ep:
-        cmd.extend(["--entrypoint", ep])
-
-    # Pasar variables de entorno específicas del scraper
-    for k, v in config["env"].items():
-        cmd.extend(["-e", f"{k}={v}"])
-
-    # Volúmenes extra (para sobreescribir los del docker-compose si es necesario)
-    for vol in config.get("extra_volumes", []):
-        cmd.extend(["-v", vol])
-
-    # Service + subcomando
-    if isinstance(config["subcomando"], list):
-        cmd += [config["service"]] + config["subcomando"]
-    else:
-        cmd += [config["service"], config["subcomando"]]
-
-    # Argumentos comunes
-    cmd += ["--zona", req.zona, "--max-paginas", str(req.max_paginas)]
-
-    # Output path: dentro del contenedor es container_output, en el host es output_dir
-    output_container_path = config.get("container_output", "/output")
-    cmd += ["-o", f"{output_container_path}/{output_filename}"]
-
-    if req.precio_max is not None:
-        cmd.extend(["--precio-max", str(int(req.precio_max))])
-    if req.precio_min is not None:
-        cmd.extend(["--precio-min", str(int(req.precio_min))])
-
-    logger.info("Ejecutando scraper via Docker: %s", " ".join(str(c) for c in cmd))
-
-    # Ejecutar
     start = datetime.now()
+    logger.info("Idealista API: solicitando %d propiedades a %s/api/scrape", req.max_items, _IDEALISTA_API_URL)
+
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 min max
+        resp = http_requests.post(
+            f"{_IDEALISTA_API_URL}/api/scrape",
+            json={
+                "max_items": req.max_items,
+                "sort": "newest",
+                "no_phones": True,
+                # La zona la define el servicio, no el CRM
+            },
+            timeout=120,  # 2 min max
         )
-    except subprocess.TimeoutExpired:
+        resp.raise_for_status()
+        data = resp.json()
+    except http_requests.ConnectionError:
         return ScraperEjecutarResponse(
             status="error",
-            fuente=fuente,
-            mensaje="El scraper tardó más de 10 minutos. Probá con menos páginas.",
+            fuente="idealista-hyper",
+            mensaje=f"No se pudo conectar al servicio Idealista API en {_IDEALISTA_API_URL}. ¿Está corriendo?",
+        )
+    except http_requests.Timeout:
+        return ScraperEjecutarResponse(
+            status="error",
+            fuente="idealista-hyper",
+            mensaje="El servicio Idealista API tardó más de 2 minutos.",
         )
     except Exception as e:
         return ScraperEjecutarResponse(
             status="error",
-            fuente=fuente,
-            mensaje=f"Error ejecutando scraper: {e}",
+            fuente="idealista-hyper",
+            mensaje=f"Error llamando al servicio Idealista: {e}",
         )
 
     duracion = (datetime.now() - start).total_seconds()
 
-    # Docker compose run no devuelve exit code del proceso en algunos casos
-    # Verificamos por la existencia del archivo de salida
-    if not output_path.exists():
-        stderr_preview = result.stderr[:500] if result.stderr else "Sin stderr"
-        stdout_preview = result.stdout[:500] if result.stdout else "Sin stdout"
-        logger.error("Scraper Docker falló. stdout: %s stderr: %s", stdout_preview, stderr_preview)
+    if data.get("status") != "ok":
         return ScraperEjecutarResponse(
             status="error",
-            fuente=fuente,
-            mensaje=f"Scraper no generó archivo de salida. Docker exit: {result.returncode}",
-            duracion_seg=duracion,
-        )
-
-    # Leer resultados
-    try:
-        with open(output_path) as f:
-            data = json.load(f)
-    except Exception as e:
-        return ScraperEjecutarResponse(
-            status="error",
-            fuente=fuente,
-            mensaje=f"Error leyendo JSON de salida: {e}",
+            fuente="idealista-hyper",
+            mensaje=f"El servicio Idealista devolvió error: {data}",
             duracion_seg=duracion,
         )
 
@@ -232,24 +193,75 @@ def ejecutar_scraper(
     total_encontradas = len(propiedades_raw)
 
     # Importar al CRM
-    importadas = _importar_propiedades(db, propiedades_raw, fuente)
-
-    # Contar requests a Hyper Solutions (idealista)
-    if "idealista" in fuente:
-        _incrementar_contador_hyper()
+    importadas = _importar_propiedades(db, propiedades_raw, "idealista")
+    _incrementar_contador_hyper()
 
     logger.info(
-        "Scraper %s: %d encontradas, %d importadas en %.1f seg",
-        fuente, total_encontradas, importadas, duracion,
+        "Idealista API: %d encontradas, %d importadas en %.1f seg",
+        total_encontradas, importadas, duracion,
     )
 
     return ScraperEjecutarResponse(
         status="ok",
-        fuente=fuente,
+        fuente="idealista-hyper",
         propiedades_encontradas=total_encontradas,
         propiedades_importadas=importadas,
-        mensaje=f"Scraper completado. {importadas} propiedades nuevas importadas de {total_encontradas} encontradas.",
-        archivo=str(output_path),
+        mensaje=f"Idealista: {importadas} propiedades nuevas importadas de {total_encontradas} encontradas (vía API)",
+        duracion_seg=duracion,
+    )
+
+
+_FOTOCASA_API_URL = os.environ.get("FOTOCASA_API_URL", "http://localhost:9092")
+
+
+def _ejecutar_fotocasa_via_api(
+    req: ScraperEjecutarRequest,
+    db: Session,
+) -> ScraperEjecutarResponse:
+    """Llama al API Service de Fotocasa (HTTP) en vez de ejecutar Docker."""
+    import requests as http_requests
+
+    start = datetime.now()
+    logger.info("Fotocasa API: solicitando %d propiedades (zona=%s) a %s/api/scrape", req.max_items, req.zona, _FOTOCASA_API_URL)
+
+    try:
+        resp = http_requests.post(
+            f"{_FOTOCASA_API_URL}/api/scrape",
+            json={
+                "max_items": req.max_items,
+                "zona": req.zona,
+                "precio_min": req.precio_min,
+                "precio_max": req.precio_max,
+            },
+            timeout=300,  # 5 min (Playwright es lento)
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except http_requests.ConnectionError:
+        return ScraperEjecutarResponse(
+            status="error", fuente="fotocasa",
+            mensaje=f"No se pudo conectar al servicio Fotocasa API en {_FOTOCASA_API_URL}",
+        )
+    except http_requests.Timeout:
+        return ScraperEjecutarResponse(status="error", fuente="fotocasa", mensaje="Timeout 2 min")
+    except Exception as e:
+        return ScraperEjecutarResponse(status="error", fuente="fotocasa", mensaje=f"Error: {e}")
+
+    duracion = (datetime.now() - start).total_seconds()
+
+    if data.get("status") != "ok":
+        return ScraperEjecutarResponse(status="error", fuente="fotocasa", mensaje=f"Error: {data}")
+
+    propiedades_raw = data.get("propiedades", [])
+    total_encontradas = len(propiedades_raw)
+    importadas = _importar_propiedades(db, propiedades_raw, "fotocasa")
+
+    logger.info("Fotocasa API: %d encontradas, %d importadas en %.1f seg", total_encontradas, importadas, duracion)
+    return ScraperEjecutarResponse(
+        status="ok", fuente="fotocasa",
+        propiedades_encontradas=total_encontradas,
+        propiedades_importadas=importadas,
+        mensaje=f"Fotocasa: {importadas} nuevas de {total_encontradas} encontradas (via API)",
         duracion_seg=duracion,
     )
 
@@ -309,27 +321,41 @@ def ejecutar_scraper_html(
     fuente: str,
     request: Request,
     db: Session = Depends(get_db),
+    # Campos legacy para Fotocasa
     zona: str = Form("valencia"),
     precio_max: Optional[str] = Form(None),
     precio_min: Optional[str] = Form(None),
     max_paginas: int = Form(3),
+    # Campos nuevos para Idealista
+    max_items: int = Form(30),
 ):
     """Ejecuta scraper y devuelve HTML parcial (para HTMX).
     
     Incluye actualización OOB de las stats para que los contadores
     y la fecha de última ejecución se actualicen automáticamente.
+    
+    Para Idealista usa los nuevos parámetros simplificados
+    (solo cantidad de propiedades, siempre ordenado por más recientes).
     """
-    # Convertir valores vacios a None (sin filtro de precio)
-    p_max = float(precio_max) if precio_max else None
-    p_min = float(precio_min) if precio_min else None
+    es_idealista = "idealista" in fuente.lower()
 
-    req = ScraperEjecutarRequest(
-        fuente=fuente,
-        zona=zona,
-        precio_max=p_max,
-        precio_min=p_min,
-        max_paginas=max_paginas,
-    )
+    if es_idealista:
+        req = ScraperEjecutarRequest(
+            fuente=fuente,
+            max_items=max_items,
+        )
+    else:
+        # Convertir valores vacios a None (sin filtro de precio)
+        p_max = float(precio_max) if precio_max else None
+        p_min = float(precio_min) if precio_min else None
+
+        req = ScraperEjecutarRequest(
+            fuente=fuente,
+            zona=zona,
+            precio_max=p_max,
+            precio_min=p_min,
+            max_paginas=max_paginas,
+        )
     resultado = ejecutar_scraper(req, db)
 
     # Obtener stats actualizadas
@@ -470,6 +496,7 @@ def _importar_propiedades(
             url=url,
             fotos=fotos_json,
             descripcion=raw.get("descripcion"),
+            agencia=raw.get("agencia"),
             telefono_contacto=raw.get("telefono_contacto"),
             estado=EstadoPropiedad.DISPONIBLE,
         )
